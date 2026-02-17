@@ -1,0 +1,17 @@
+{
+  "description": "Eidetic code search hooks",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/prefer-eidetic.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
