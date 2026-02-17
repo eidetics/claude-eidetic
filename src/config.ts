@@ -39,17 +39,17 @@ let cachedConfig: Config | null = null;
 export function loadConfig(): Config {
   const raw = {
     embeddingProvider: process.env.EMBEDDING_PROVIDER,
-    openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+    openaiApiKey: (process.env.OPENAI_API_KEY ?? '').trim().replace(/^["']|["']$/g, ''),
     openaiBaseUrl: process.env.OPENAI_BASE_URL || undefined,
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
     embeddingModel: process.env.EMBEDDING_MODEL || undefined,
     embeddingBatchSize: process.env.EMBEDDING_BATCH_SIZE,
     indexingConcurrency: process.env.INDEXING_CONCURRENCY,
     qdrantUrl: process.env.QDRANT_URL,
-    qdrantApiKey: process.env.QDRANT_API_KEY || undefined,
+    qdrantApiKey: process.env.QDRANT_API_KEY?.trim().replace(/^["']|["']$/g, '') || undefined,
     vectordbProvider: process.env.VECTORDB_PROVIDER,
     milvusAddress: process.env.MILVUS_ADDRESS,
-    milvusToken: process.env.MILVUS_TOKEN || undefined,
+    milvusToken: process.env.MILVUS_TOKEN?.trim().replace(/^["']|["']$/g, '') || undefined,
     eideticDataDir: process.env.EIDETIC_DATA_DIR,
     customExtensions: process.env.CUSTOM_EXTENSIONS,
     customIgnorePatterns: process.env.CUSTOM_IGNORE_PATTERNS,
@@ -62,13 +62,6 @@ export function loadConfig(): Config {
   }
 
   const config = result.data;
-
-  if (config.embeddingProvider === 'openai' && !config.openaiApiKey) {
-    throw new ConfigError(
-      'OPENAI_API_KEY is required when EMBEDDING_PROVIDER is "openai" (the default). ' +
-      'Set EMBEDDING_PROVIDER=ollama or EMBEDDING_PROVIDER=local to use a local embedding server.',
-    );
-  }
 
   cachedConfig = config;
   return cachedConfig;

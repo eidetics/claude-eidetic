@@ -32,10 +32,12 @@ describe('loadConfig', () => {
     expect(config.embeddingModel).toBe('text-embedding-3-small');
   });
 
-  it('throws ConfigError when openai provider and no API key', async () => {
+  it('allows missing API key for openai provider (guard moved to server startup)', async () => {
     vi.stubEnv('OPENAI_API_KEY', '');
     const loadConfig = await freshLoadConfig();
-    expect(() => loadConfig()).toThrow('OPENAI_API_KEY');
+    const config = loadConfig();
+    expect(config.embeddingProvider).toBe('openai');
+    expect(config.openaiApiKey).toBe('');
   });
 
   it('allows missing API key for ollama provider', async () => {
@@ -45,6 +47,20 @@ describe('loadConfig', () => {
     const config = loadConfig();
     expect(config.embeddingProvider).toBe('ollama');
     expect(config.embeddingModel).toBe('nomic-embed-text');
+  });
+
+  it('strips surrounding quotes from API key', async () => {
+    vi.stubEnv('OPENAI_API_KEY', '"sk-test-key"');
+    const loadConfig = await freshLoadConfig();
+    const config = loadConfig();
+    expect(config.openaiApiKey).toBe('sk-test-key');
+  });
+
+  it('strips single quotes from API key', async () => {
+    vi.stubEnv('OPENAI_API_KEY', "'sk-test-key'");
+    const loadConfig = await freshLoadConfig();
+    const config = loadConfig();
+    expect(config.openaiApiKey).toBe('sk-test-key');
   });
 
   it('parses batch size from env', async () => {

@@ -23,6 +23,7 @@ import { bootstrapQdrant } from './infra/qdrant-bootstrap.js';
 import { StateManager, cleanupOrphanedSnapshots } from './state/snapshot.js';
 import { ToolHandlers } from './tools.js';
 import { TOOL_DEFINITIONS } from './tool-schemas.js';
+import { getSetupErrorMessage } from './setup-message.js';
 
 const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 
@@ -52,27 +53,36 @@ async function main() {
   const config = loadConfig();
   console.log(`Config loaded. Provider: ${config.vectordbProvider}, Model: ${config.embeddingModel}`);
 
-  const embedding = createEmbedding(config);
-  await embedding.initialize();
+  let handlers: ToolHandlers | null = null;
+  let setupError: string | null = null;
 
-  let vectordb;
-  if (config.vectordbProvider === 'milvus') {
-    const { MilvusVectorDB } = await import('./vectordb/milvus.js');
-    vectordb = new MilvusVectorDB();
-    console.log(`Using Milvus at ${config.milvusAddress}`);
-  } else {
-    const qdrantUrl = await bootstrapQdrant();
-    vectordb = new QdrantVectorDB(qdrantUrl);
-    console.log(`Using Qdrant at ${qdrantUrl}`);
+  try {
+    const embedding = createEmbedding(config);
+    await embedding.initialize();
+
+    let vectordb;
+    if (config.vectordbProvider === 'milvus') {
+      const { MilvusVectorDB } = await import('./vectordb/milvus.js');
+      vectordb = new MilvusVectorDB();
+      console.log(`Using Milvus at ${config.milvusAddress}`);
+    } else {
+      const qdrantUrl = await bootstrapQdrant();
+      vectordb = new QdrantVectorDB(qdrantUrl);
+      console.log(`Using Qdrant at ${qdrantUrl}`);
+    }
+
+    const cleaned = await cleanupOrphanedSnapshots(vectordb);
+    if (cleaned > 0) {
+      console.log(`Cleaned ${cleaned} orphaned snapshot(s).`);
+    }
+
+    const state = new StateManager();
+    handlers = new ToolHandlers(embedding, vectordb, state);
+  } catch (err) {
+    setupError = err instanceof Error ? err.message : String(err);
+    console.warn(`Eidetic initialization failed: ${setupError}`);
+    console.warn('Server will start in setup-required mode. All tool calls will return setup instructions.');
   }
-
-  const cleaned = await cleanupOrphanedSnapshots(vectordb);
-  if (cleaned > 0) {
-    console.log(`Cleaned ${cleaned} orphaned snapshot(s).`);
-  }
-
-  const state = new StateManager();
-  const handlers = new ToolHandlers(embedding, vectordb, state);
 
   const server = new Server(
     { name: 'claude-eidetic', version: '0.1.0' },
@@ -85,6 +95,16 @@ async function main() {
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
+
+    if (!handlers) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: getSetupErrorMessage(setupError ?? 'Unknown error'),
+        }],
+        isError: true,
+      };
+    }
 
     switch (name) {
       case 'index_codebase':
