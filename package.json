@@ -7,6 +7,13 @@
   "bin": {
     "claude-eidetic": "dist/index.js"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/*.test.*",
+    "!dist/__test__/**",
+    "!dist/e2e/**"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx --watch src/index.ts",
@@ -18,7 +25,8 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
-    "test:audit": "tsx scripts/audit/lonely-source.ts; tsx scripts/audit/mock-hygiene.ts; tsx scripts/audit/bare-hands.ts; tsx scripts/audit/timer-drift.ts"
+    "test:audit": "tsx scripts/audit/lonely-source.ts; tsx scripts/audit/mock-hygiene.ts; tsx scripts/audit/bare-hands.ts; tsx scripts/audit/timer-drift.ts",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
