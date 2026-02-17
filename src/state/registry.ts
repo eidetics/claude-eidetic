@@ -1,0 +1,40 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { getRegistryPath } from '../paths.js';
+
+interface Registry {
+  [project: string]: string;
+}
+
+function readRegistry(): Registry {
+  const registryPath = getRegistryPath();
+  try {
+    const data = fs.readFileSync(registryPath, 'utf-8');
+    return JSON.parse(data) as Registry;
+  } catch {
+    return {};
+  }
+}
+
+function writeRegistry(registry: Registry): void {
+  const registryPath = getRegistryPath();
+  const dir = path.dirname(registryPath);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n', 'utf-8');
+}
+
+export function registerProject(absolutePath: string): void {
+  const name = path.basename(absolutePath).toLowerCase();
+  const registry = readRegistry();
+  registry[name] = absolutePath;
+  writeRegistry(registry);
+}
+
+export function resolveProject(project: string): string | undefined {
+  const registry = readRegistry();
+  return registry[project.toLowerCase()];
+}
+
+export function listProjects(): Registry {
+  return readRegistry();
+}

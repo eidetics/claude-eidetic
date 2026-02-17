@@ -1,0 +1,13 @@
+export class EideticError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class ConfigError extends EideticError {}
+export class EmbeddingError extends EideticError {}
+export class VectorDBError extends EideticError {}
+export class IndexingError extends EideticError {}
+export class SearchError extends EideticError {}
+export class BootstrapError extends EideticError {}

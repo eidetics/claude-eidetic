@@ -1,0 +1,290 @@
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { randomUUID } from 'node:crypto';
+import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult } from './types.js';
+import { VectorDBError } from '../errors.js';
+import { getConfig } from '../config.js';
+
+export const RRF_K = 5; // Reciprocal Rank Fusion constant (low k for code search — stronger rank separation)
+export const RRF_ALPHA = 0.7; // Blend weight: 70% rank-based (fusion stability), 30% raw similarity (query-specific signal)
+
+export class QdrantVectorDB implements VectorDB {
+  private client: QdrantClient;
+
+  constructor(url?: string, apiKey?: string) {
+    const config = getConfig();
+    this.client = new QdrantClient({
+      url: url ?? config.qdrantUrl,
+      ...(apiKey ?? config.qdrantApiKey ? { apiKey: apiKey ?? config.qdrantApiKey } : {}),
+    });
+  }
+
+  async createCollection(name: string, dimension: number): Promise<void> {
+    try {
+      await this.client.createCollection(name, {
+        vectors: {
+          dense: { size: dimension, distance: 'Cosine' },
+        },
+      });
+
+      // Create payload indexes for filtering and full-text search
+      await Promise.all([
+        this.client.createPayloadIndex(name, {
+          field_name: 'content',
+          field_schema: 'text',
+          wait: true,
+        }),
+        this.client.createPayloadIndex(name, {
+          field_name: 'relativePath',
+          field_schema: 'keyword',
+          wait: true,
+        }),
+        this.client.createPayloadIndex(name, {
+          field_name: 'fileExtension',
+          field_schema: 'keyword',
+          wait: true,
+        }),
+      ]);
+    } catch (err) {
+      throw new VectorDBError(`Failed to create collection "${name}"`, err);
+    }
+  }
+
+  async hasCollection(name: string): Promise<boolean> {
+    try {
+      const response = await this.client.collectionExists(name);
+      return response.exists;
+    } catch {
+      return false;
+    }
+  }
+
+  async dropCollection(name: string): Promise<void> {
+    try {
+      if (await this.hasCollection(name)) {
+        await this.client.deleteCollection(name);
+      }
+    } catch (err) {
+      throw new VectorDBError(`Failed to drop collection "${name}"`, err);
+    }
+  }
+
+  async insert(name: string, documents: CodeDocument[]): Promise<void> {
+    if (documents.length === 0) return;
+
+    try {
+      const batchSize = 100;
+      for (let i = 0; i < documents.length; i += batchSize) {
+        const batch = documents.slice(i, i + batchSize);
+        await this.client.upsert(name, {
+          wait: true,
+          points: batch.map(doc => ({
+            id: doc.id ?? randomUUID(),
+            vector: { dense: doc.vector },
+            payload: {
+              content: doc.content,
+              relativePath: doc.relativePath,
+              startLine: doc.startLine,
+              endLine: doc.endLine,
+              fileExtension: doc.fileExtension,
+              language: doc.language,
+            },
+          })),
+        });
+      }
+    } catch (err) {
+      throw new VectorDBError(`Failed to insert ${documents.length} documents into "${name}"`, err);
+    }
+  }
+
+  async search(name: string, params: HybridSearchParams): Promise<SearchResult[]> {
+    try {
+      const fetchLimit = params.limit * 2;
+
+      const extensionFilter = params.extensionFilter?.length
+        ? {
+            should: params.extensionFilter.map(ext => ({
+              key: 'fileExtension',
+              match: { value: ext },
+            })),
+          }
+        : undefined;
+
+      const denseResults = await this.client.search(name, {
+        vector: { name: 'dense', vector: params.queryVector },
+        limit: fetchLimit,
+        with_payload: true,
+        ...(extensionFilter ? { filter: { must: [extensionFilter] } } : {}),
+      });
+
+      const textFilter: Record<string, unknown>[] = [
+        { key: 'content', match: { text: params.queryText } },
+      ];
+      if (extensionFilter) {
+        textFilter.push(extensionFilter);
+      }
+
+      const textResponse = await this.client.scroll(name, {
+        filter: { must: textFilter },
+        limit: fetchLimit,
+        with_payload: true,
+      });
+
+      // Rank text results by query term frequency so RRF receives a meaningful ordering
+      const rankedTextResults = rankByTermFrequency(textResponse.points, params.queryText);
+
+      // 3. Client-side RRF fusion blending rank position with raw similarity scores
+      return reciprocalRankFusion(denseResults, rankedTextResults, params.limit);
+    } catch (err) {
+      throw new VectorDBError(`Search failed in collection "${name}"`, err);
+    }
+  }
+
+  async deleteByPath(name: string, relativePath: string): Promise<void> {
+    try {
+      await this.client.delete(name, {
+        filter: {
+          must: [{ key: 'relativePath', match: { value: relativePath } }],
+        },
+        wait: true,
+      });
+    } catch (err) {
+      throw new VectorDBError(`Failed to delete documents for path "${relativePath}" from "${name}"`, err);
+    }
+  }
+}
+
+// --- Text Result Ranking ---
+
+interface RankedPoint {
+  id: string | number;
+  payload?: Record<string, unknown> | null;
+  rawScore: number; // normalized TF score (0-1)
+}
+
+/**
+ * Rank text-match results by normalized term frequency.
+ *
+ * Qdrant's scroll API returns text-filtered points in storage order (not by
+ * relevance). Before feeding these into RRF, we score each result by how many
+ * query terms appear in its content, normalized by word count to avoid bias
+ * toward longer chunks. Returns points sorted best-first with rawScore attached
+ * so RRF can blend rank position with content-based signal.
+ */
+export function rankByTermFrequency(
+  points: { id: string | number; payload?: Record<string, unknown> | null }[],
+  queryText: string,
+): RankedPoint[] {
+  if (points.length === 0) return [];
+
+  // Split query into individual terms, deduplicate, and build escaped regex patterns
+  const terms = [...new Set(queryText.toLowerCase().split(/\s+/).filter(t => t.length > 0))];
+  if (terms.length === 0) return points.map(p => ({ ...p, rawScore: 0 }));
+
+  const termPatterns = terms.map(t => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
+
+  const scored = points.map(point => {
+    const content = ((point.payload as Record<string, unknown> | undefined)?.content as string) ?? '';
+    const wordCount = Math.max(1, content.split(/\s+/).length);
+
+    // Count total term occurrences across all query terms
+    let hits = 0;
+    for (const pattern of termPatterns) {
+      pattern.lastIndex = 0; // reset stateful regex
+      const matches = content.match(pattern);
+      hits += matches ? matches.length : 0;
+    }
+
+    // Normalize by word count (TF = hits / total words)
+    const tf = hits / wordCount;
+    return { point, tf };
+  });
+
+  // Sort by TF descending (best matches first)
+  scored.sort((a, b) => b.tf - a.tf);
+
+  // Normalize TF to 0-1 range for blending with cosine similarity
+  const maxTf = scored[0].tf;
+  return scored.map(s => ({
+    ...s.point,
+    rawScore: maxTf > 0 ? s.tf / maxTf : 0,
+  }));
+}
+
+// --- Reciprocal Rank Fusion ---
+
+interface ScoredPayload {
+  id: string | number;
+  content: string;
+  relativePath: string;
+  startLine: number;
+  endLine: number;
+  fileExtension: string;
+  language: string;
+}
+
+export function extractPayload(point: { id: string | number; payload?: Record<string, unknown> | null }): ScoredPayload {
+  const p = point.payload ?? {};
+  return {
+    id: point.id,
+    content: String(p.content ?? ''),
+    relativePath: String(p.relativePath ?? ''),
+    startLine: Number(p.startLine ?? 0),
+    endLine: Number(p.endLine ?? 0),
+    fileExtension: String(p.fileExtension ?? ''),
+    language: String(p.language ?? ''),
+  };
+}
+
+export function reciprocalRankFusion(
+  denseResults: { id: string | number; score?: number; payload?: Record<string, unknown> | null }[],
+  textResults: RankedPoint[],
+  limit: number,
+): SearchResult[] {
+  const scoreMap = new Map<string | number, { score: number; payload: ScoredPayload }>();
+
+  // Hybrid RRF blended with raw similarity:
+  //   score = alpha * (1/(k + rank + 1)) + (1-alpha) * rawSimilarity
+  // alpha=0.7 preserves rank-fusion stability while 0.3 raw similarity
+  // injects query-specific signal so identical ranks get different scores.
+  const blendedScore = (rank: number, rawSimilarity: number) =>
+    RRF_ALPHA * (1 / (RRF_K + rank + 1)) + (1 - RRF_ALPHA) * rawSimilarity;
+
+  // Score from dense results (cosine similarity from Qdrant)
+  for (let rank = 0; rank < denseResults.length; rank++) {
+    const point = denseResults[rank];
+    const rawSim = point.score ?? 0; // cosine similarity (0-1)
+    const score = blendedScore(rank, rawSim);
+    const existing = scoreMap.get(point.id);
+    const payload = extractPayload(point);
+    if (existing) {
+      existing.score += score;
+    } else {
+      scoreMap.set(point.id, { score, payload });
+    }
+  }
+
+  // Score from text results (normalized TF from rankByTermFrequency)
+  for (let rank = 0; rank < textResults.length; rank++) {
+    const point = textResults[rank];
+    const score = blendedScore(rank, point.rawScore);
+    const existing = scoreMap.get(point.id);
+    const payload = extractPayload(point);
+    if (existing) {
+      existing.score += score;
+    } else {
+      scoreMap.set(point.id, { score, payload });
+    }
+  }
+
+  const sorted = [...scoreMap.values()].sort((a, b) => b.score - a.score).slice(0, limit);
+
+  return sorted.map(({ score, payload }) => ({
+    content: payload.content,
+    relativePath: payload.relativePath,
+    startLine: payload.startLine,
+    endLine: payload.endLine,
+    fileExtension: payload.fileExtension,
+    language: payload.language,
+    score,
+  }));
+}

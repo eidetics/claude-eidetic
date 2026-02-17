@@ -1,0 +1,9 @@
+{
+  "claude-eidetic": {
+    "command": "npx",
+    "args": ["-y", "claude-eidetic"],
+    "env": {
+      "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+    }
+  }
+}

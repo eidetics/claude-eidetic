@@ -1,0 +1,54 @@
+{
+  "name": "claude-eidetic",
+  "version": "0.1.0",
+  "description": "Semantic code search MCP server — lean, correct, fast",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "claude-eidetic": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx --watch src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
+    "test:audit": "tsx scripts/audit/lonely-source.ts; tsx scripts/audit/mock-hygiene.ts; tsx scripts/audit/bare-hands.ts; tsx scripts/audit/timer-drift.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@qdrant/js-client-rest": "^1.13.0",
+    "glob": "^10.0.0",
+    "openai": "^5.1.1",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-c-sharp": "^0.21.0",
+    "tree-sitter-cpp": "^0.22.0",
+    "tree-sitter-go": "^0.21.0",
+    "tree-sitter-java": "^0.21.0",
+    "tree-sitter-javascript": "^0.21.0",
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-rust": "^0.21.0",
+    "tree-sitter-typescript": "^0.21.0",
+    "zod": "^3.25.0"
+  },
+  "optionalDependencies": {
+    "@zilliz/milvus2-sdk-node": "^2.5.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}
