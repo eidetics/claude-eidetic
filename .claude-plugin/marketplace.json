@@ -1,0 +1,19 @@
+{
+  "name": "eidetics",
+  "description": "Semantic code search for Claude Code — index once, search semantically with compact token-efficient output",
+  "owner": {
+    "name": "Eidetics",
+    "url": "https://github.com/eidetics"
+  },
+  "repository": "https://github.com/eidetics/claude-eidetic",
+  "plugins": [
+    {
+      "name": "claude-eidetic",
+      "description": "Semantic code search MCP server with compact output, skills, and hooks",
+      "source": "./plugin",
+      "version": "1.0.0",
+      "category": "development",
+      "tags": ["code-search", "semantic-search", "mcp"]
+    }
+  ]
+}
