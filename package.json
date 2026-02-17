@@ -1,6 +1,6 @@
 {
   "name": "claude-eidetic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Semantic code search MCP server — lean, correct, fast",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,8 @@
     "dist/**/*.d.ts",
     "!dist/**/*.test.*",
     "!dist/__test__/**",
-    "!dist/e2e/**"
+    "!dist/e2e/**",
+    "messages.yaml"
   ],
   "scripts": {
     "build": "tsc",
@@ -42,6 +43,7 @@
     "tree-sitter-python": "^0.21.0",
     "tree-sitter-rust": "^0.21.0",
     "tree-sitter-typescript": "^0.21.0",
+    "yaml": "^2.8.2",
     "zod": "^3.25.0"
   },
   "optionalDependencies": {

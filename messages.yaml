@@ -1,0 +1,50 @@
+# Eidetic user-facing messages — edit here, everything else reads from this file.
+
+setup:
+  missing:
+    header: "Eidetic setup required: No API key configured."
+    diagnosis: >
+      `OPENAI_API_KEY` is not set and no alternative provider is configured.
+    step1: "**Get an API key**: https://platform.openai.com/api-keys"
+
+  invalid:
+    header: "Eidetic setup failed: {error}"
+    diagnosis: >
+      Key/provider is configured but initialization failed.
+      The key may be invalid, expired, or the provider may be unreachable.
+    step1: "**Verify your key** is valid and has embedding permissions"
+
+  unknown:
+    header: "Eidetic setup failed: {error}"
+    diagnosis: ""
+    step1: "**Get an API key**: https://platform.openai.com/api-keys"
+
+  # Shared across all contexts
+  config_instructions: |
+    ### Windows
+    ```
+      setx OPENAI_API_KEY sk-your-key-here
+    ```
+
+    ### macOS / Linux
+    Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+    ```
+      export OPENAI_API_KEY="sk-your-key-here"
+    ```
+
+    ### Manual
+
+    Edit `~/.claude/plugins/claude-eidetic/config.json`:
+    ```json
+    {
+      "env": {
+        "OPENAI_API_KEY": "sk-your-key-here"
+      }
+    }
+    ```
+
+    ### Using Ollama instead (free, local)
+
+    Set `EMBEDDING_PROVIDER=ollama` in the same env block (requires Ollama running locally with `nomic-embed-text`).
+
+  footer: "**Restart Claude Code** for changes to take effect."
