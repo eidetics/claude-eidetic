@@ -155,18 +155,22 @@ afterAll(() => {
 });
 
 describeIfServer('MCP protocol', () => {
-  it('tools/list returns 5 tools', async () => {
+  it('tools/list returns 9 tools', async () => {
     const resp = await client!.listTools();
     expect(resp.error).toBeUndefined();
     const tools = (resp.result as { tools: { name: string }[] }).tools;
-    expect(tools).toHaveLength(5);
+    expect(tools).toHaveLength(9);
     const names = tools.map(t => t.name).sort();
     expect(names).toEqual([
+      '__IMPORTANT',
       'clear_index',
       'get_indexing_status',
       'index_codebase',
+      'index_document',
       'list_indexed',
+      'read_file',
       'search_code',
+      'search_documents',
     ]);
   });
 

@@ -21,7 +21,7 @@ import { createEmbedding } from './embedding/factory.js';
 import { QdrantVectorDB } from './vectordb/qdrant.js';
 import { bootstrapQdrant } from './infra/qdrant-bootstrap.js';
 import { StateManager, cleanupOrphanedSnapshots } from './state/snapshot.js';
-import { ToolHandlers } from './tools.js';
+import { ToolHandlers, handleReadFile } from './tools.js';
 import { TOOL_DEFINITIONS } from './tool-schemas.js';
 import { getSetupErrorMessage } from './setup-message.js';
 
@@ -39,6 +39,11 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 - Use \`extensionFilter\` to narrow by file type
 - Use \`project\` param instead of \`path\` for convenience
 - Start with specific queries, broaden if no results
+
+**Reading files efficiently:**
+- \`read_file(path="...")\` → raw content without line-number overhead (~15-20% fewer tokens for code, more for short-line files)
+- Use \`offset\` and \`limit\` to page through large files
+- Add \`lineNumbers=true\` only when you need line references for editing
 
 **After first index:**
 - Re-indexing is incremental (only changed files re-embedded)
@@ -102,6 +107,10 @@ async function main() {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
+    // Tools that work without initialization (no embedding/vectordb needed)
+    if (name === '__IMPORTANT') return { content: [{ type: 'text' as const, text: WORKFLOW_GUIDANCE }] };
+    if (name === 'read_file') return handleReadFile(args ?? {});
+
     if (!handlers) {
       return {
         content: [{
@@ -127,10 +136,6 @@ async function main() {
         return handlers.handleIndexDocument(args ?? {});
       case 'search_documents':
         return handlers.handleSearchDocuments(args ?? {});
-      case '__IMPORTANT':
-        return {
-          content: [{ type: 'text' as const, text: WORKFLOW_GUIDANCE }],
-        };
       default:
         return {
           content: [{ type: 'text' as const, text: `Unknown tool: ${name}` }],

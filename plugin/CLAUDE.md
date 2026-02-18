@@ -15,6 +15,11 @@ Use search_code for codebase exploration. Use Read only for files you already kn
 - `get_indexing_status(path)` — Check indexing progress
 - `clear_index(path)` — Remove index for a codebase
 
+### File Reading
+- `read_file(path)` — Read file without line-number overhead (~15-20% fewer tokens for code, more for short-line files)
+  - Use `offset` and `limit` to page through large files
+  - Add `lineNumbers=true` when you need line references for editing
+
 ### Documentation Cache
 - `index_document(content, source, library, topic)` — Cache fetched documentation for cheap search later
 - `search_documents(query, library?)` — Search cached docs (~20 tokens/result vs ~5K+ per fetch)
