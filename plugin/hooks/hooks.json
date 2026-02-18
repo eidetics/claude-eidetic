@@ -22,6 +22,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "query-docs|query_docs|resolve-library-id|resolve_library_id|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/prefer-docs-cache.sh\"",
+            "timeout": 5
+          }
+        ]
       }
     ]
   }

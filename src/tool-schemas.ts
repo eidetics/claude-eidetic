@@ -1,3 +1,22 @@
+const INDEX_DOCUMENT_DESCRIPTION = `\
+Cache external documentation (from query-docs, WebFetch, etc.) for cheap semantic search later.
+
+After fetching documentation from an external source, call this tool to store it. \
+Subsequent queries about the same library will use search_documents (~20 tokens/result) \
+instead of re-fetching (~5K+ tokens).
+
+The content is split into chunks, embedded, and stored in a vector collection grouped by library. \
+A TTL tracks staleness — stale docs still return results but are flagged.`;
+
+const SEARCH_DOCUMENTS_DESCRIPTION = `\
+Search cached documentation using natural language queries.
+
+Returns results from previously cached documentation (via index_document). \
+Much cheaper than re-fetching docs (~20 tokens/result vs ~5K+ tokens/fetch).
+
+If a specific library is provided, searches only that library's collection. \
+Otherwise searches across all cached documentation. Results include staleness indicators.`;
+
 const INDEX_DESCRIPTION = `\
 Index a codebase directory to enable semantic search using a configurable code splitter.
 
@@ -149,6 +168,61 @@ export const TOOL_DEFINITIONS = [
       type: 'object' as const,
       properties: {},
       required: [],
+    },
+  },
+  {
+    name: 'index_document',
+    description: INDEX_DOCUMENT_DESCRIPTION,
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        content: {
+          type: 'string',
+          description: 'The full text content of the documentation to cache.',
+        },
+        source: {
+          type: 'string',
+          description: 'Source URL or identifier (e.g., "https://docs.langfuse.com/guides/evaluators" or "context7:langfuse/hooks").',
+        },
+        library: {
+          type: 'string',
+          description: 'Library name (e.g., "react", "langfuse"). Used for collection grouping.',
+        },
+        topic: {
+          type: 'string',
+          description: 'Topic within the library (e.g., "hooks", "evaluators").',
+        },
+        ttlDays: {
+          type: 'number',
+          description: 'Days before the cached content is considered stale.',
+          default: 7,
+        },
+      },
+      required: ['content', 'source', 'library', 'topic'],
+    },
+  },
+  {
+    name: 'search_documents',
+    description: SEARCH_DOCUMENTS_DESCRIPTION,
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Natural language query to search cached documentation.',
+        },
+        library: {
+          type: 'string',
+          description: 'Optional: limit search to a specific library (e.g., "langfuse"). Omit to search all cached docs.',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return.',
+          default: 5,
+          maximum: 20,
+        },
+      },
+      required: ['query'],
     },
   },
   {

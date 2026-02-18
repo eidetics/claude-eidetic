@@ -2,11 +2,13 @@ import { normalizePath, pathToCollectionName } from './paths.js';
 import { indexCodebase, previewCodebase, deleteSnapshot } from './core/indexer.js';
 import { getConfig } from './config.js';
 import { searchCode, formatSearchResults, formatCompactResults } from './core/searcher.js';
+import { indexDocument } from './core/doc-indexer.js';
+import { searchDocuments } from './core/doc-searcher.js';
 import { StateManager } from './state/snapshot.js';
 import { registerProject, resolveProject, listProjects } from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
 import type { VectorDB } from './vectordb/types.js';
-import { textResult, formatPreview, formatIndexResult, formatListIndexed } from './format.js';
+import { textResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults } from './format.js';
 
 function resolvePath(args: Record<string, unknown>): string | undefined {
   const pathArg = args.path as string | undefined;
@@ -190,5 +192,48 @@ export class ToolHandlers {
       return textResult('No codebases are currently indexed in this session.\n\nUse `index_codebase` to index a codebase first.');
     }
     return textResult(formatListIndexed(states));
+  }
+
+  async handleIndexDocument(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    const content = args.content as string | undefined;
+    if (!content) return textResult('Error: "content" is required. Provide the documentation text to cache.');
+
+    const source = args.source as string | undefined;
+    if (!source) return textResult('Error: "source" is required. Provide the source URL or identifier.');
+
+    const library = args.library as string | undefined;
+    if (!library) return textResult('Error: "library" is required. Provide the library name (e.g., "react", "langfuse").');
+
+    const topic = args.topic as string | undefined;
+    if (!topic) return textResult('Error: "topic" is required. Provide the topic within the library (e.g., "hooks").');
+
+    const ttlDays = (args.ttlDays as number) ?? 7;
+
+    try {
+      const result = await indexDocument(content, source, library, topic, this.embedding, this.vectordb, ttlDays);
+      return textResult(formatDocIndexResult(result));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error caching documentation: ${message}`);
+    }
+  }
+
+  async handleSearchDocuments(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    const query = args.query as string | undefined;
+    if (!query) return textResult('Error: "query" is required. Provide a natural language search query.');
+
+    const library = args.library as string | undefined;
+    const rawLimit = args.limit as number | undefined;
+    const limit = (rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit >= 1)
+      ? rawLimit
+      : undefined;
+
+    try {
+      const results = await searchDocuments(query, this.embedding, this.vectordb, { library, limit });
+      return textResult(formatDocSearchResults(results, query));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error: ${message}`);
+    }
   }
 }

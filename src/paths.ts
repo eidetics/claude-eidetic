@@ -44,3 +44,16 @@ export function pathToCollectionName(absolutePath: string): string {
     .replace(/^_|_$/g, '');
   return `eidetic_${safe}`;
 }
+
+export function getDocMetadataPath(): string {
+  return `${getDataDir()}/doc-metadata.json`;
+}
+
+export function docCollectionName(library: string): string {
+  const safe = library
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+  return `doc_${safe}`;
+}

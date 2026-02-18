@@ -47,7 +47,13 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 
 **Cross-project search:**
 - Index multiple projects, each with its own path
-- Search across any indexed project regardless of current working directory`;
+- Search across any indexed project regardless of current working directory
+
+**Documentation caching (saves ~5K tokens per repeated doc fetch):**
+- After fetching docs via query-docs or WebFetch, cache them: \`index_document(content="...", source="<url>", library="<name>", topic="<topic>")\`
+- Next time you need the same docs: \`search_documents(query="...", library="<name>")\` (~20 tokens/result)
+- Docs are grouped by library — one collection per library, searchable across topics
+- Stale docs (past TTL) still return results but are flagged \`[STALE]\``;
 
 async function main() {
   const config = loadConfig();
@@ -117,6 +123,10 @@ async function main() {
         return handlers.handleGetIndexingStatus(args ?? {});
       case 'list_indexed':
         return handlers.handleListIndexed();
+      case 'index_document':
+        return handlers.handleIndexDocument(args ?? {});
+      case 'search_documents':
+        return handlers.handleSearchDocuments(args ?? {});
       case '__IMPORTANT':
         return {
           content: [{ type: 'text' as const, text: WORKFLOW_GUIDANCE }],

@@ -1,4 +1,6 @@
 import type { PreviewResult, IndexResult } from './core/indexer.js';
+import type { DocIndexResult } from './core/doc-indexer.js';
+import type { DocSearchResult } from './core/doc-searcher.js';
 import type { CodebaseState } from './state/snapshot.js';
 import { listProjects } from './state/registry.js';
 
@@ -100,5 +102,44 @@ export function formatListIndexed(states: CodebaseState[]): string {
     if (s.error) lines.push(`  Error:        ${s.error}`);
     lines.push('');
   }
+  return lines.join('\n');
+}
+
+export function formatDocIndexResult(result: DocIndexResult): string {
+  const lines = [
+    `Documentation cached: ${result.library}/${result.topic}`,
+    '',
+    `  Source:     ${result.source}`,
+    `  Chunks:    ${result.totalChunks}`,
+    `  Tokens:    ~${(result.estimatedTokens / 1000).toFixed(0)}K`,
+    `  Duration:  ${(result.durationMs / 1000).toFixed(1)}s`,
+    `  Collection: ${result.collectionName}`,
+    '',
+    `Use \`search_documents(query="...", library="${result.library}")\` to search this documentation.`,
+  ];
+  return lines.join('\n');
+}
+
+export function formatDocSearchResults(results: DocSearchResult[], query: string): string {
+  if (results.length === 0) {
+    return `No cached documentation found for "${query}".`;
+  }
+
+  const lines: string[] = [
+    `Found ${results.length} result(s) for "${query}" in cached docs:\n`,
+  ];
+
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    const staleTag = r.stale ? ' **[STALE]**' : '';
+    lines.push(`### Result ${i + 1}`);
+    lines.push(`**Library:** ${r.library}/${r.topic} | **Source:** ${r.source}${staleTag}`);
+    lines.push(`**Score:** ${r.score.toFixed(4)}`);
+    lines.push('```markdown');
+    lines.push(r.content);
+    lines.push('```');
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
