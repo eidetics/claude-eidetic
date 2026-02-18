@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizePath, pathToCollectionName } from './paths.js';
+import { normalizePath, pathToCollectionName, docCollectionName } from './paths.js';
 
 describe('normalizePath', () => {
   it('converts backslashes to forward slashes', () => {
@@ -67,5 +67,36 @@ describe('pathToCollectionName', () => {
     const a = pathToCollectionName('/home/user/project');
     const b = pathToCollectionName('/home/user/project');
     expect(a).toBe(b);
+  });
+});
+
+describe('docCollectionName', () => {
+  it('produces doc_ prefix', () => {
+    expect(docCollectionName('react')).toBe('doc_react');
+  });
+
+  it('lowercases the library name', () => {
+    expect(docCollectionName('React')).toBe('doc_react');
+    expect(docCollectionName('LANGFUSE')).toBe('doc_langfuse');
+  });
+
+  it('replaces non-alphanumeric chars with underscores', () => {
+    expect(docCollectionName('my-library.js')).toMatch(/^doc_[a-z0-9_]+$/);
+  });
+
+  it('collapses consecutive underscores', () => {
+    const result = docCollectionName('my--lib');
+    expect(result).not.toContain('__');
+  });
+
+  it('strips leading and trailing underscores from safe portion', () => {
+    const result = docCollectionName('-react-');
+    const safePart = result.slice('doc_'.length);
+    expect(safePart.startsWith('_')).toBe(false);
+    expect(safePart.endsWith('_')).toBe(false);
+  });
+
+  it('is deterministic', () => {
+    expect(docCollectionName('langfuse')).toBe(docCollectionName('langfuse'));
   });
 });
