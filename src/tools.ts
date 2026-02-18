@@ -1,3 +1,4 @@
+import { readFile, stat } from 'node:fs/promises';
 import { normalizePath, pathToCollectionName } from './paths.js';
 import { indexCodebase, previewCodebase, deleteSnapshot } from './core/indexer.js';
 import { getConfig } from './config.js';
@@ -236,4 +237,65 @@ export class ToolHandlers {
       return textResult(`Error: ${message}`);
     }
   }
+}
+
+const MAX_LINES = 10_000;
+const DEFAULT_LINES = 5_000;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export async function handleReadFile(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  const rawPath = args.path as string | undefined;
+  if (!rawPath) return textResult('Error: "path" is required. Provide an absolute file path.');
+
+  const filePath = normalizePath(rawPath);
+  const offset = Math.max(0, (args.offset as number | undefined) ?? 0);
+  const limit = Math.min(MAX_LINES, Math.max(1, (args.limit as number | undefined) ?? DEFAULT_LINES));
+  const lineNumbers = (args.lineNumbers as boolean | undefined) ?? false;
+
+  let raw: string;
+  try {
+    const fileStat = await stat(filePath);
+    if (fileStat.isDirectory()) return textResult(`Error: Path is a directory, not a file: ${filePath}`);
+    if (fileStat.size > MAX_FILE_SIZE) {
+      return textResult(`Error: File too large (${(fileStat.size / 1024 / 1024).toFixed(1)}MB). Maximum: 10MB.`);
+    }
+    raw = await readFile(filePath, 'utf-8');
+  } catch (err: unknown) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === 'ENOENT') return textResult(`Error: File not found: ${filePath}`);
+    if (nodeErr.code === 'EACCES' || nodeErr.code === 'EPERM') return textResult(`Error: Permission denied: ${filePath}`);
+    if (nodeErr.code === 'EISDIR') return textResult(`Error: Path is a directory, not a file: ${filePath}`);
+    const message = err instanceof Error ? err.message : String(err);
+    return textResult(`Error reading file: ${message}`);
+  }
+
+  if (raw.includes('\x00')) return textResult(`Error: Binary file detected: ${filePath}`);
+
+  if (raw.length === 0) {
+    return textResult(`File: ${filePath} | Lines: 0 total | (empty file)`);
+  }
+
+  const allLines = raw.split('\n');
+  const totalLines = allLines.length;
+
+  // offset is 1-based line number; convert to 0-based index
+  const startIndex = offset > 0 ? offset - 1 : 0;
+  const sliced = allLines.slice(startIndex, startIndex + limit);
+  const startLine = startIndex + 1;
+  const endLine = startIndex + sliced.length;
+
+  let content: string;
+  if (lineNumbers) {
+    const pad = String(endLine).length;
+    content = sliced.map((line, i) => `${String(startLine + i).padStart(pad)} ${line}`).join('\n');
+  } else {
+    content = sliced.join('\n');
+  }
+
+  let meta = `File: ${filePath} | Lines: ${totalLines} total | Showing: ${startLine}–${endLine}`;
+  if (endLine < totalLines) {
+    meta += ` | Next: read_file(path="${filePath}", offset=${endLine + 1})`;
+  }
+
+  return textResult(meta + '\n\n' + content);
 }

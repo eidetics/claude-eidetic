@@ -1,3 +1,9 @@
+const READ_FILE_DESCRIPTION = `\
+Read a file and return raw content without line-number overhead (~15-20% fewer tokens than built-in Read for code, more for short-line files).
+
+Use offset and limit to page through large files. \
+Add lineNumbers=true only when you need line references for editing.`;
+
 const INDEX_DOCUMENT_DESCRIPTION = `\
 Cache external documentation (from query-docs, WebFetch, etc.) for cheap semantic search later.
 
@@ -223,6 +229,36 @@ export const TOOL_DEFINITIONS = [
         },
       },
       required: ['query'],
+    },
+  },
+  {
+    name: 'read_file',
+    description: READ_FILE_DESCRIPTION,
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute file path to read.',
+        },
+        offset: {
+          type: 'number',
+          description: '1-based line number to start reading from.',
+          default: 1,
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of lines to return.',
+          default: 5000,
+          maximum: 10000,
+        },
+        lineNumbers: {
+          type: 'boolean',
+          description: 'Prefix each line with its line number. Only enable when you need line references for editing.',
+          default: false,
+        },
+      },
+      required: ['path'],
     },
   },
   {
