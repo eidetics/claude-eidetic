@@ -25,22 +25,35 @@ const EXEMPT = new Set([
 
 const sourceFiles = globSync('**/*.ts', {
   cwd: src,
-  ignore: ['**/*.test.ts', '**/*.integration.test.ts', '__test__/**', 'e2e/**'],
+  ignore: ['**/*.test.ts', '**/*.integration.test.ts', '__tests__/**', '**/tests/**', 'e2e/**'],
 }).filter(f => !EXEMPT.has(path.basename(f)));
+
+/** Map a test file path to the source file it covers.
+ *  Handles both co-located tests (foo.test.ts → foo.ts)
+ *  and tests/ subdirectory convention (core/tests/foo.test.ts → core/foo.ts,
+ *  __tests__/foo.test.ts → foo.ts). */
+function testToSource(testPath: string, suffix: RegExp): string {
+  const stripped = testPath.replace(suffix, '.ts').replace(/\\/g, '/');
+  // tests/ subdirectory: move file up one level
+  const normalized = stripped.replace(/\btests\//, '');
+  // __tests__/ top-level directory: strip the prefix
+  return normalized.replace(/^__tests__\//, '');
+}
 
 const testFiles = new Set(
   globSync('**/*.test.ts', { cwd: src })
-    .map(f => f.replace(/\.test\.ts$/, '.ts'))
+    .map(f => testToSource(f, /\.test\.ts$/))
 );
 
 const integrationFiles = new Set(
   globSync('**/*.integration.test.ts', { cwd: src })
-    .map(f => f.replace(/\.integration\.test\.ts$/, '.ts'))
+    .map(f => testToSource(f, /\.integration\.test\.ts$/))
 );
 
 const lonely: string[] = [];
 for (const file of sourceFiles) {
-  if (!testFiles.has(file) && !integrationFiles.has(file)) {
+  const normalized = file.replace(/\\/g, '/');
+  if (!testFiles.has(normalized) && !integrationFiles.has(normalized)) {
     lonely.push(file);
   }
 }

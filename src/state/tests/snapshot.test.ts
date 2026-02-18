@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { StateManager } from './snapshot.js';
+import { StateManager } from '../snapshot.js';
 
 describe('StateManager', () => {
   it('returns undefined for unknown path', () => {

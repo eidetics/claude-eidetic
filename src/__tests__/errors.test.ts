@@ -7,7 +7,7 @@ import {
   IndexingError,
   SearchError,
   BootstrapError,
-} from './errors.js';
+} from '../errors.js';
 
 describe('Error hierarchy', () => {
   const errorClasses = [

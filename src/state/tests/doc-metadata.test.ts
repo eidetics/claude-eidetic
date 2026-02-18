@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 let tmpDir: string;
 
-vi.mock('../paths.js', () => ({
+vi.mock('../../paths.js', () => ({
   getDocMetadataPath: () => path.join(tmpDir, 'doc-metadata.json'),
   getDataDir: () => tmpDir,
 }));
@@ -22,7 +22,7 @@ import {
   daysAgo,
   listDocLibraries,
   type DocEntry,
-} from './doc-metadata.js';
+} from '../doc-metadata.js';
 
 function makeEntry(overrides: Partial<DocEntry> = {}): DocEntry {
   return {

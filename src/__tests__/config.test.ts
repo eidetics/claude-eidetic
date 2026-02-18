@@ -9,7 +9,7 @@ describe('loadConfig', () => {
   });
 
   async function freshLoadConfig() {
-    const mod = await import('./config.js');
+    const mod = await import('../config.js');
     return mod.loadConfig;
   }
 

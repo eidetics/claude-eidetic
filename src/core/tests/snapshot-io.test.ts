@@ -5,14 +5,14 @@ import path from 'node:path';
 
 let tmpDir: string;
 
-vi.mock('../paths.js', () => ({
+vi.mock('../../paths.js', () => ({
   pathToCollectionName: (p: string) => 'eidetic_' + p.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
   getSnapshotDir: () => path.join(tmpDir, 'snapshots'),
   normalizePath: (p: string) => p,
   getDataDir: () => tmpDir,
 }));
 
-import { saveSnapshot, loadSnapshot, deleteSnapshot, snapshotExists } from './snapshot-io.js';
+import { saveSnapshot, loadSnapshot, deleteSnapshot, snapshotExists } from '../snapshot-io.js';
 
 describe('snapshot-io', () => {
   beforeEach(() => {

@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ToolHandlers } from './tools.js';
-import { MockEmbedding } from './__test__/mock-embedding.js';
-import { MockVectorDB } from './__test__/mock-vectordb.js';
-import { StateManager } from './state/snapshot.js';
-import { normalizePath, pathToCollectionName } from './paths.js';
+import { ToolHandlers } from '../tools.js';
+import { MockEmbedding } from './mock-embedding.js';
+import { MockVectorDB } from './mock-vectordb.js';
+import { StateManager } from '../state/snapshot.js';
+import { normalizePath, pathToCollectionName } from '../paths.js';
 
 // Mock the registry module to avoid filesystem deps
-vi.mock('./state/registry.js', () => ({
+vi.mock('../state/registry.js', () => ({
   registerProject: vi.fn(),
   resolveProject: vi.fn(() => undefined),
   listProjects: vi.fn(() => ({})),
 }));
 
 // Mock indexer to avoid complex filesystem operations
-vi.mock('./core/indexer.js', () => ({
+vi.mock('../core/indexer.js', () => ({
   indexCodebase: vi.fn(async () => ({
     totalFiles: 5,
     totalChunks: 20,

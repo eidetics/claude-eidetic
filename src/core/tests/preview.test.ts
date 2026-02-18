@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { previewCodebase } from './preview.js';
-import { MockEmbedding } from '../__test__/mock-embedding.js';
+import { previewCodebase } from '../preview.js';
+import { MockEmbedding } from '../../__tests__/mock-embedding.js';
 
 let tmpDir: string;
 const embedding = new MockEmbedding();

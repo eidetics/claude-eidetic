@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the registry module before importing format
-vi.mock('./state/registry.js', () => ({
+vi.mock('../state/registry.js', () => ({
   listProjects: vi.fn(() => ({})),
 }));
 
-import { textResult, formatIndexResult, formatPreview, formatListIndexed } from './format.js';
-import { listProjects } from './state/registry.js';
-import type { IndexResult, PreviewResult } from './core/indexer.js';
-import type { CodebaseState } from './state/snapshot.js';
+import { textResult, formatIndexResult, formatPreview, formatListIndexed } from '../format.js';
+import { listProjects } from '../state/registry.js';
+import type { IndexResult, PreviewResult } from '../core/indexer.js';
+import type { CodebaseState } from '../state/snapshot.js';
 
 afterEach(() => {
   vi.restoreAllMocks();

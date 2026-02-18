@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSparseUnsupportedError } from './milvus.js';
-import { VectorDBError } from '../errors.js';
+import { isSparseUnsupportedError } from '../milvus.js';
+import { VectorDBError } from '../../errors.js';
 
 // ── Hoisted mock client (available inside vi.mock factories) ─────────────────
 
@@ -34,7 +34,7 @@ vi.mock('@zilliz/milvus2-sdk-node', () => ({
   LoadState: { LoadStateLoaded: 'LoadStateLoaded' },
 }));
 
-vi.mock('../config.js', () => ({
+vi.mock('../../config.js', () => ({
   getConfig: () => ({
     milvusAddress: 'localhost:19530',
     milvusToken: undefined,
@@ -43,7 +43,7 @@ vi.mock('../config.js', () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────────
 
-const { MilvusVectorDB } = await import('./milvus.js');
+const { MilvusVectorDB } = await import('../milvus.js');
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 

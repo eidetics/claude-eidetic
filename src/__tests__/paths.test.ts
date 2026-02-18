@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizePath, pathToCollectionName, docCollectionName } from './paths.js';
+import { normalizePath, pathToCollectionName, docCollectionName } from '../paths.js';
 
 describe('normalizePath', () => {
   it('converts backslashes to forward slashes', () => {

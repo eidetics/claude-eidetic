@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AstSplitter } from './ast.js';
+import { AstSplitter } from '../ast.js';
 
 describe('AstSplitter', () => {
   const splitter = new AstSplitter();
