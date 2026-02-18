@@ -39,18 +39,15 @@ export async function previewCodebase(
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // Estimate tokens from file sizes (rough: sum sizes / 4 chars-per-token)
   let totalBytes = 0;
   for (const f of filePaths) {
     try {
       const stat = fs.statSync(path.join(normalizedPath, f));
       totalBytes += stat.size;
     } catch {
-      // File may have disappeared between scan and stat
+      // file may have disappeared between scan and stat
     }
   }
-  // Conservative estimate: ~3-4 chars per token for code.
-  // May underestimate for dense code; will be refined during actual indexing.
   const estimatedTokens = Math.ceil(totalBytes / 3);
   const estimatedCostUsd = (estimatedTokens / 1_000_000) * 0.02;
 

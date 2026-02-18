@@ -42,7 +42,6 @@ export function formatIndexResult(result: IndexResult, normalizedPath: string): 
 export function formatPreview(preview: PreviewResult, rootPath: string): string {
   const lines: string[] = [`Preview for ${rootPath}:`, ''];
 
-  // Extension breakdown
   const sorted = Object.entries(preview.byExtension)
     .sort((a, b) => b[1] - a[1]);
 
@@ -55,7 +54,6 @@ export function formatPreview(preview: PreviewResult, rootPath: string): string 
 
   lines.push(`Total: ${preview.totalFiles.toLocaleString()} files`, '');
 
-  // Top directories
   if (preview.topDirectories.length > 0) {
     lines.push('Top directories:');
     for (const { dir, count } of preview.topDirectories) {
@@ -64,13 +62,11 @@ export function formatPreview(preview: PreviewResult, rootPath: string): string 
     lines.push('');
   }
 
-  // Cost estimate
   const tokenStr = preview.estimatedTokens >= 1_000_000
     ? `~${(preview.estimatedTokens / 1_000_000).toFixed(1)}M`
     : `~${(preview.estimatedTokens / 1000).toFixed(0)}K`;
   lines.push(`Estimated: ${tokenStr} tokens (~$${preview.estimatedCostUsd.toFixed(4)})`, '');
 
-  // Warnings
   lines.push('Warnings:');
   if (preview.warnings.length === 0) {
     lines.push('- None');

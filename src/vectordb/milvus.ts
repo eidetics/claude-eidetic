@@ -2,7 +2,6 @@ import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult } from '.
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
 
-// Dynamic import -- @zilliz/milvus2-sdk-node is an optional dependency
 let MilvusClient: any;
 let DataType: any;
 let MetricType: any;
@@ -66,7 +65,6 @@ export class MilvusVectorDB implements VectorDB {
   async createCollection(name: string, dimension: number): Promise<void> {
     await this.ready();
 
-    // Try hybrid first, fall back to dense-only if Milvus version doesn't support sparse
     try {
       await this.createHybridCollection(name, dimension);
       this.hybridCollections.add(name);
@@ -78,7 +76,6 @@ export class MilvusVectorDB implements VectorDB {
           `Milvus does not support SparseFloatVector (requires >= v2.4). ` +
           `Falling back to dense-only collection for "${name}".`,
         );
-        // Clean up the failed collection attempt
         try { await this.client.dropCollection({ collection_name: name }); } catch (cleanupErr) { console.warn(`Failed to clean up collection "${name}": ${cleanupErr}`); }
       } else {
         throw new VectorDBError(`Failed to create Milvus collection "${name}"`, err);
@@ -285,10 +282,6 @@ export class MilvusVectorDB implements VectorDB {
     }));
   }
 
-  /**
-   * Detect whether a collection has the sparse_vector field (hybrid) or not.
-   * Caches result in hybridCollections set.
-   */
   private async detectHybrid(name: string): Promise<boolean> {
     if (this.hybridCollections.has(name)) return true;
 

@@ -38,7 +38,6 @@ export async function indexDocument(
   const collection = docCollectionName(library);
   const config = getConfig();
 
-  // Split content into chunks
   const splitter = new LineSplitter();
   const chunks = splitter.split(content, 'markdown', source);
 
@@ -46,20 +45,17 @@ export async function indexDocument(
     throw new IndexingError('Document produced no chunks after splitting.');
   }
 
-  // Ensure collection exists
   const exists = await vectordb.hasCollection(collection);
   if (!exists) {
     await vectordb.createCollection(collection, embedding.dimension);
   }
 
-  // Delete old chunks for this source (enables refresh)
   try {
     await vectordb.deleteByPath(collection, source);
   } catch {
-    // Collection may be new with no matching docs — safe to ignore
+    // collection may be new with no matching docs
   }
 
-  // Embed and insert in batches
   const batchSize = config.embeddingBatchSize;
   let totalChunks = 0;
   let totalTokens = 0;
@@ -88,7 +84,6 @@ export async function indexDocument(
     totalChunks += batch.length;
   }
 
-  // Update metadata
   upsertDocEntry({
     library,
     topic,

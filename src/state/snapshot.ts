@@ -90,13 +90,7 @@ export async function cleanupOrphanedSnapshots(vectordb: VectorDB): Promise<numb
     const files = fs.readdirSync(snapshotDir).filter(f => f.endsWith('.json'));
     if (files.length === 0) return 0;
 
-    // Connectivity probe: use a name unlikely to exist. If hasCollection throws
-    // or the vector DB is unreachable (Qdrant's hasCollection returns false on
-    // network error), we must not proceed -- deleting snapshots when we cannot
-    // confirm collection absence would destroy valid state.
     const probeResult = await vectordb.hasCollection('__eidetic_connectivity_probe__');
-    // If the probe returns true for a name that should never exist, something is
-    // wrong -- skip cleanup to be safe.
     if (probeResult) {
       console.warn('Orphan cleanup skipped: connectivity probe returned unexpected result.');
       return 0;
@@ -113,12 +107,10 @@ export async function cleanupOrphanedSnapshots(vectordb: VectorDB): Promise<numb
           cleaned++;
         }
       } catch (err) {
-        // Network error for this specific check -- skip rather than risk deletion
         console.warn(`Skipping orphan check for ${collectionName}: ${err}`);
       }
     }
   } catch (err) {
-    // Connectivity probe failure or filesystem error -- skip cleanup entirely
     console.warn(`Orphan cleanup skipped: ${err}`);
   }
 

@@ -1,5 +1,3 @@
-/** Reads messages from messages.yaml — edit that file to change any user-facing text. */
-
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -62,8 +60,7 @@ export function getSetupErrorMessage(errorDetail: string, context?: SetupContext
   );
 }
 
-// CLI mode: outputs session-start hook JSON to stdout
-// Called by plugin/hooks/session-start.sh to avoid duplicating the message
+// Called by plugin/hooks/session-start.sh
 if (process.argv[1] === __filename) {
   const context = (process.argv[2] as SetupContext | undefined) ?? 'missing';
   const detail = process.argv[3] ?? 'OPENAI_API_KEY is not set.';

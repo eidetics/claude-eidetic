@@ -2,10 +2,6 @@ import path from 'node:path';
 import os from 'node:os';
 import { getConfig } from './config.js';
 
-/**
- * Normalize a path to forward slashes, resolve to absolute, remove trailing slash.
- * This is the single source of truth for path handling — called at every boundary.
- */
 export function normalizePath(inputPath: string): string {
   let resolved = inputPath;
   if (resolved.startsWith('~')) {

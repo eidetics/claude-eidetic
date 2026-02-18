@@ -38,7 +38,6 @@ const SPLITTABLE_TYPES: Record<string, string[]> = {
   csharp: ['method_declaration', 'class_declaration', 'interface_declaration', 'struct_declaration', 'enum_declaration'],
 };
 
-// Map aliases to canonical language names for node type lookup
 const LANG_CANONICAL: Record<string, string> = {
   js: 'javascript', ts: 'typescript', py: 'python',
   rs: 'rust', 'c++': 'cpp', c: 'cpp', cs: 'csharp',
@@ -54,7 +53,6 @@ export class AstSplitter implements Splitter {
   private static langCache = new Map<string, unknown>();
 
   private static resolveLanguage(lang: string): unknown | null {
-    // Resolve alias to canonical name first — prevents duplicate cache entries
     const canonical = LANG_CANONICAL[lang] ?? lang;
 
     const cached = AstSplitter.langCache.get(canonical);
@@ -79,11 +77,10 @@ export class AstSplitter implements Splitter {
     const langModule = AstSplitter.resolveLanguage(lang);
 
     if (!langModule) {
-      return []; // Caller should fall back to line splitter
+      return [];
     }
 
     try {
-      // Skip setLanguage() if parser is already configured for this language
       if (canonical !== this.currentLang) {
         this.parser.setLanguage(langModule);
         this.currentLang = canonical;
@@ -95,13 +92,12 @@ export class AstSplitter implements Splitter {
       const nodeTypes = SPLITTABLE_TYPES[canonical] ?? [];
       const rawChunks = this.extractChunks(tree.rootNode, code, nodeTypes, language, filePath);
 
-      // If no meaningful chunks found, return empty (caller will use line splitter)
       if (rawChunks.length === 0) return [];
 
       return this.refineChunks(rawChunks);
     } catch (err) {
       console.warn(`AST parse failed for "${filePath}" (${language}): ${err}`);
-      return []; // Caller should fall back to line splitter
+      return [];
     }
   }
 

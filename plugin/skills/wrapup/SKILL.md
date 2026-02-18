@@ -3,13 +3,9 @@ name: wrapup
 description: Persist session state to searchable notes for future recovery
 ---
 
-# /wrapup — Save Session Context
-
-Save key context from this session to Eidetic-searchable notes.
+# /wrapup
 
 ## Step 1: Detect Project
-
-Run this command to get the project name and notes path:
 
 ```bash
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -23,33 +19,28 @@ else
 fi
 ```
 
-- If user passed an argument (e.g., `/wrapup myproject`), use that as PROJECT_NAME instead.
-- If NO_GIT_REPO and no argument, ask user for the project name.
-- Use the EXACT output values for all subsequent steps. Do not modify or guess paths.
+- Argument overrides PROJECT_NAME (e.g. `/wrapup myproject`).
+- If NO_GIT_REPO and no argument, ask for project name.
 
 ## Step 2: Extract Facts
 
-Scan the conversation and extract:
-- **Decisions** made (with rationale and alternatives rejected)
-- **Changes** implemented (exact file paths, what changed)
-- **Numbers** (metrics, costs, counts, performance measurements)
+From the conversation, extract:
+- **Decisions** (choice, rationale, alternatives rejected)
+- **Changes** (exact file paths, what changed)
+- **Numbers** (metrics, costs, counts)
 - **Open questions** (mark OPEN or ASSUMED)
 - **Next actions** (specific, actionable)
-- **Blockers** (dependencies, issues)
+- **Blockers**
 
-If the conversation has no meaningful content to persist, inform user and stop.
+If nothing meaningful to persist, inform user and stop.
 
 ## Step 3: Write Note
-
-Create the directory and write the note file:
 
 ```bash
 mkdir -p "$NOTES_DIR"
 ```
 
-Write to `$NOTES_DIR/<YYYY-MM-DD>-<topic-slug>.md` where topic-slug is kebab-case, max 3 words, derived from the main work done. Use today's date.
-
-**Note template** (follow exactly — date and project appear 4 times for search reliability):
+Filename: `$NOTES_DIR/<YYYY-MM-DD>-<topic-slug>.md` (kebab-case, max 3 words, today's date).
 
 ```
 ---
@@ -64,43 +55,35 @@ branch: <current git branch>
 **Project:** <PROJECT_NAME>
 
 ## Decisions
-
 - **[Title]**: [Choice]. Rationale: [why]. Rejected: [alternatives].
 
 ## Changes
-
 - `path/to/file.ts`: [what changed and why]
 
 ## Numbers
-
-- [Any measurements, counts, costs]
+- [measurements, counts, costs]
 
 ## Open Questions
-
-- **OPEN**: [Needs user decision]
-- **ASSUMED**: [Assumption made, needs validation]
+- **OPEN**: [needs decision]
+- **ASSUMED**: [assumption, needs validation]
 
 ## Next Actions
-
-1. [Specific action]
+1. [specific action]
 
 ---
 *<PROJECT_NAME> session recorded <YYYY-MM-DD>*
 ```
 
-## Step 4: Index
+Date and project appear 4 times for search reliability — keep all occurrences.
 
-Call Eidetic MCP tool using the EXACT NOTES_DIR path from Step 1:
+## Step 4: Index
 
 ```
 index_codebase(path="<NOTES_DIR>")
 ```
 
-Do NOT use `force: true` — incremental indexing is sufficient and cheaper.
+Do not use `force: true`.
 
 ## Step 5: Confirm
 
-Tell user:
-- File path where note was saved
-- What was captured (count of decisions, changes, open questions)
-- That index was updated for future /catchup
+Report: file path saved, count of decisions/changes/open questions, index updated.

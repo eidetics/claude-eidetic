@@ -33,21 +33,18 @@ function noPathError(): { content: { type: string; text: string }[] } {
 const locks = new Map<string, Promise<void>>();
 
 async function withMutex<T>(key: string, fn: () => Promise<T>): Promise<T> {
-  // Chain onto any existing operation for this key (FIFO ordering, no race)
   const prev = locks.get(key) ?? Promise.resolve();
 
   let resolve!: () => void;
   const current = new Promise<void>(r => { resolve = r; });
   locks.set(key, current);
 
-  // Wait for previous operation to complete
   await prev;
 
   try {
     return await fn();
   } finally {
     resolve();
-    // Only delete if we're still the latest operation
     if (locks.get(key) === current) {
       locks.delete(key);
     }

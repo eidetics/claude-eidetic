@@ -4,10 +4,6 @@ const DEFAULT_CHUNK_LINES = 60;
 const OVERLAP_LINES = 5;
 const MAX_CHUNK_CHARS = 2500;
 
-/**
- * Simple line-based splitter. Used as fallback when tree-sitter
- * doesn't support the language or fails to parse.
- */
 export class LineSplitter implements Splitter {
   private chunkLines: number;
   private overlapLines: number;
@@ -86,9 +82,7 @@ export class LineSplitter implements Splitter {
         lineCount = 0;
       }
 
-      // If a single line exceeds the limit, hard-split it by characters
       if (addition.length > MAX_CHUNK_CHARS) {
-        // Flush anything accumulated before this line
         if (current.length > 0) {
           flush();
           current = '';
