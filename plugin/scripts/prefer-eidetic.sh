@@ -7,7 +7,7 @@ if [ "$TOOL_NAME" = "Grep" ]; then
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "allow",
-      "additionalContext": "REMINDER: For semantic/conceptual code search, prefer search_code MCP tool over Grep. search_code returns compact results at ~20 tokens/result vs ~100+ for Grep. Use Grep only for exact string/regex matches."
+      "additionalContext": "STOP: Before using Grep to search code, use the search_code MCP tool instead. search_code provides semantic search at ~50 tokens/result vs Grep at ~100+ tokens. Only use Grep for exact string/regex matches where literal precision matters."
     }
   }'
 elif [ "$TOOL_NAME" = "Read" ]; then
@@ -15,7 +15,7 @@ elif [ "$TOOL_NAME" = "Read" ]; then
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "allow",
-      "additionalContext": "REMINDER: If exploring/searching code, prefer search_code MCP tool over Read. search_code returns compact results at ~20 tokens/result vs ~2000 for a full file read. Only use Read for files you already know you need."
+      "additionalContext": "STOP: If you are reading this file to explore or search code, use the search_code MCP tool instead. search_code returns ~50 tokens/result vs ~2000 tokens for a full file Read. Only use Read for files you have already identified and need full content from."
     }
   }'
 fi
