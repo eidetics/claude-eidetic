@@ -2,16 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { indexCodebase } from './indexer.js';
-import { MockEmbedding } from '../__test__/mock-embedding.js';
-import { MockVectorDB } from '../__test__/mock-vectordb.js';
-import { SAMPLE_TS, SAMPLE_PY, SAMPLE_JS } from '../__test__/fixtures.js';
+import { indexCodebase } from '../indexer.js';
+import { MockEmbedding } from '../../__tests__/mock-embedding.js';
+import { MockVectorDB } from '../../__tests__/mock-vectordb.js';
+import { SAMPLE_TS, SAMPLE_PY, SAMPLE_JS } from '../../__tests__/fixtures.js';
 
 // Mock snapshot-io to use temp dir instead of global ~/.eidetic
 let tmpDataDir: string;
 
-vi.mock('../paths.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../paths.js')>();
+vi.mock('../../paths.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../paths.js')>();
   return {
     ...actual,
     getSnapshotDir: () => path.join(tmpDataDir, 'snapshots'),

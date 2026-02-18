@@ -11,7 +11,8 @@
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "!dist/**/*.test.*",
-    "!dist/__test__/**",
+    "!dist/__tests__/**",
+    "!dist/**/tests/**",
     "!dist/e2e/**",
     "messages.yaml"
   ],

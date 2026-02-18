@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { deduplicateResults, formatSearchResults, formatCompactResults } from './searcher.js';
-import type { SearchResult } from '../vectordb/types.js';
+import { deduplicateResults, formatSearchResults, formatCompactResults } from '../searcher.js';
+import type { SearchResult } from '../../vectordb/types.js';
 
 function makeResult(overrides: Partial<SearchResult> = {}): SearchResult {
   return {

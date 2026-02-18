@@ -5,7 +5,7 @@ import {
   extractPayload,
   RRF_K,
   RRF_ALPHA,
-} from './qdrant.js';
+} from '../qdrant.js';
 
 function makePoint(id: string | number, content: string, extra: Record<string, unknown> = {}) {
   return {

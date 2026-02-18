@@ -5,9 +5,9 @@ import {
   parseGitignorePatterns,
   buildSnapshot,
   scanFiles,
-} from './sync.js';
-import type { FileSnapshot } from './sync.js';
-import { createTempCodebase, cleanupTempDir } from '../__test__/fixtures.js';
+} from '../sync.js';
+import type { FileSnapshot } from '../sync.js';
+import { createTempCodebase, cleanupTempDir } from '../../__tests__/fixtures.js';
 
 /** Normalize path separators for cross-platform assertions */
 const norm = (p: string) => p.replace(/\\/g, '/');

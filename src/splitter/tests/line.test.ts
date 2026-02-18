@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LineSplitter } from './line.js';
+import { LineSplitter } from '../line.js';
 
 const MAX_CHUNK_CHARS = 2500;
 

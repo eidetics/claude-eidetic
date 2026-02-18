@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { MockEmbedding } from '../__test__/mock-embedding.js';
-import { MockVectorDB } from '../__test__/mock-vectordb.js';
+import { MockEmbedding } from '../../__tests__/mock-embedding.js';
+import { MockVectorDB } from '../../__tests__/mock-vectordb.js';
 
 let tmpDir: string;
 
-vi.mock('../paths.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../paths.js')>();
+vi.mock('../../paths.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../paths.js')>();
   return {
     ...original,
     getDocMetadataPath: () => path.join(tmpDir, 'doc-metadata.json'),
@@ -16,14 +16,14 @@ vi.mock('../paths.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../config.js', () => ({
+vi.mock('../../config.js', () => ({
   getConfig: () => ({
     embeddingBatchSize: 100,
     indexingConcurrency: 4,
   }),
 }));
 
-import { indexDocument } from './doc-indexer.js';
+import { indexDocument } from '../doc-indexer.js';
 
 describe('indexDocument', () => {
   let embedding: MockEmbedding;

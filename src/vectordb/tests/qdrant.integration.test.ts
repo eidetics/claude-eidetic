@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { QdrantVectorDB } from './qdrant.js';
+import { QdrantVectorDB } from '../qdrant.js';
 
 const QDRANT_URL = process.env.QDRANT_URL ?? 'http://localhost:6333';
 const TEST_COLLECTION = `eidetic_integration_test_${Date.now()}`;

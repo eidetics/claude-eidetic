@@ -3,10 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ToolHandlers } from '../tools.js';
-import { MockEmbedding } from '../__test__/mock-embedding.js';
-import { MockVectorDB } from '../__test__/mock-vectordb.js';
+import { MockEmbedding } from '../__tests__/mock-embedding.js';
+import { MockVectorDB } from '../__tests__/mock-vectordb.js';
 import { StateManager } from '../state/snapshot.js';
-import { SAMPLE_TS } from '../__test__/fixtures.js';
+import { SAMPLE_TS } from '../__tests__/fixtures.js';
 
 let tmpDataDir: string;
 

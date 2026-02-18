@@ -6,13 +6,13 @@ import path from 'node:path';
 // We need to mock getRegistryPath to use a temp dir
 let tmpDir: string;
 
-vi.mock('../paths.js', () => ({
+vi.mock('../../paths.js', () => ({
   getRegistryPath: () => path.join(tmpDir, 'registry.json'),
   normalizePath: (p: string) => p,
   getDataDir: () => tmpDir,
 }));
 
-import { registerProject, resolveProject, listProjects } from './registry.js';
+import { registerProject, resolveProject, listProjects } from '../registry.js';
 
 describe('registry', () => {
   beforeEach(() => {

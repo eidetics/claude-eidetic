@@ -16,7 +16,7 @@ export default defineConfig({
         'src/**/*.integration.test.ts',
         'src/e2e/**',
         'src/index.ts',
-        'src/__test__/**',
+        'src/__tests__/**',
       ],
     },
   },

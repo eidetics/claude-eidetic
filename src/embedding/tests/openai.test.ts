@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { contentHash, OpenAIEmbedding } from './openai.js';
-import { EmbeddingError } from '../errors.js';
+import { contentHash, OpenAIEmbedding } from '../openai.js';
+import { EmbeddingError } from '../../errors.js';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 // Mock config to avoid env var dependency
-vi.mock('../config.js', () => ({
+vi.mock('../../config.js', () => ({
   getConfig: () => ({
     openaiApiKey: 'test-key',
     openaiBaseUrl: undefined,
@@ -15,7 +15,7 @@ vi.mock('../config.js', () => ({
 }));
 
 // Mock paths to avoid real filesystem
-vi.mock('../paths.js', () => ({
+vi.mock('../../paths.js', () => ({
   getCacheDir: () => '/tmp/eidetic-test-cache',
 }));
 

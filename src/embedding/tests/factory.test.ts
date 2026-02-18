@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { createEmbedding } from './factory.js';
-import { OpenAIEmbedding } from './openai.js';
-import type { Config } from '../config.js';
+import { createEmbedding } from '../factory.js';
+import { OpenAIEmbedding } from '../openai.js';
+import type { Config } from '../../config.js';
 
 function makeConfig(overrides: Partial<Config> = {}): Config {
   return {
