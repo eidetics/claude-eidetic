@@ -21,7 +21,6 @@ export async function searchCode(
   const normalizedPath = normalizePath(rootPath);
   const collectionName = pathToCollectionName(normalizedPath);
 
-  // Check collection exists
   const exists = await vectordb.hasCollection(collectionName);
   if (!exists) {
     throw new SearchError(
@@ -31,14 +30,9 @@ export async function searchCode(
   }
 
   const limit = Math.min(Math.max(1, options.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
-
-  // Embed the query
   const queryVector = await embedding.embed(query);
-
-  // Overfetch to allow dedup to still return enough results
   const overFetchLimit = Math.min(limit * 3, MAX_LIMIT);
 
-  // Hybrid search (dense + full-text + RRF with exponential decay)
   const results = await vectordb.search(collectionName, {
     queryVector,
     queryText: query,
@@ -46,15 +40,9 @@ export async function searchCode(
     extensionFilter: options.extensionFilter,
   });
 
-  // Deduplicate overlapping chunks from the same file (keep highest-scored)
   return deduplicateResults(results, limit);
 }
 
-/**
- * Deduplicate overlapping chunks from the same file.
- * Results are already sorted by score (best first). For each file, keep only
- * chunks whose line ranges do not overlap with an already-accepted chunk.
- */
 export function deduplicateResults(results: SearchResult[], limit: number): SearchResult[] {
   const accepted: SearchResult[] = [];
   // Track accepted line ranges per file: relativePath -> [startLine, endLine][]
@@ -79,11 +67,6 @@ export function deduplicateResults(results: SearchResult[], limit: number): Sear
   return accepted;
 }
 
-/**
- * Format search results as a compact markdown table for token-efficient output.
- * Returns file paths, line ranges, scores, and estimated token costs.
- * Consumers use the Read tool to fetch full code for interesting results.
- */
 export function formatCompactResults(results: SearchResult[], query: string, rootPath: string): string {
   if (results.length === 0) {
     return `No results found for "${query}" in ${rootPath}.`;
@@ -107,9 +90,6 @@ export function formatCompactResults(results: SearchResult[], query: string, roo
   return lines.join('\n');
 }
 
-/**
- * Format search results as markdown for MCP tool output.
- */
 export function formatSearchResults(results: SearchResult[], query: string, rootPath: string): string {
   if (results.length === 0) {
     return `No results found for "${query}" in ${rootPath}.`;

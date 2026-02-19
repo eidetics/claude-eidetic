@@ -32,7 +32,7 @@ export function deleteSnapshot(rootPath: string): void {
   try {
     fs.unlinkSync(filePath);
   } catch {
-    // Already gone
+    // ignore — file may already be gone
   }
 }
 

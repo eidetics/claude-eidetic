@@ -1,4 +1,4 @@
-import { execSync, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { BootstrapError } from '../errors.js';
 import { getConfig } from '../config.js';

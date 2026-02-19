@@ -28,7 +28,6 @@ export async function searchDocuments(
   const limit = Math.min(Math.max(1, options.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
   const metadata = loadDocMetadata();
 
-  // Determine which collections to search
   let collectionsToSearch: { collection: string; entries: DocEntry[] }[];
 
   if (options.library) {
@@ -44,7 +43,6 @@ export async function searchDocuments(
     }
     collectionsToSearch = [{ collection, entries }];
   } else {
-    // Search all doc collections
     const collectionMap = new Map<string, DocEntry[]>();
     for (const entry of Object.values(metadata)) {
       const existing = collectionMap.get(entry.collectionName) ?? [];
@@ -62,11 +60,8 @@ export async function searchDocuments(
     }));
   }
 
-  // Embed query once
   const queryVector = await embedding.embed(query);
   const overFetchLimit = Math.min(limit * 3, MAX_LIMIT);
-
-  // Search each collection and merge results
   const allResults: DocSearchResult[] = [];
 
   for (const { collection, entries } of collectionsToSearch) {
@@ -79,7 +74,6 @@ export async function searchDocuments(
       limit: overFetchLimit,
     });
 
-    // Annotate results with doc metadata
     for (const r of results) {
       const matchingEntry = entries.find(e => e.source === r.relativePath);
       allResults.push({
@@ -92,7 +86,6 @@ export async function searchDocuments(
     }
   }
 
-  // Sort by score descending, deduplicate, and limit
   allResults.sort((a, b) => b.score - a.score);
   const deduped = deduplicateResults(allResults, limit);
 

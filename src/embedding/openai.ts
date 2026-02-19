@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import OpenAI from 'openai';
-import { type Embedding, type EmbeddingVector } from './types.js';
+import { type Embedding, type EmbeddingVector, type TokenEstimate } from './types.js';
 import { EmbeddingError } from '../errors.js';
 import { getConfig } from '../config.js';
 import { getCacheDir } from '../paths.js';
@@ -142,12 +142,10 @@ export class OpenAIEmbedding implements Embedding {
       const hash = contentHash(texts[idx]);
       const vec = freshEmbeddings[i];
       this.setMemoryCache(hash, vec);
-      // Fire-and-forget: don't await the disk write
       this.writeDiskCache(hash, vec);
       results[idx] = vec;
     }
 
-    // Verify no nulls remain before casting
     if (results.some(r => r === null)) {
       throw new EmbeddingError(
         'Missing embeddings: some texts did not receive vectors after cache lookup and API call.',
@@ -157,12 +155,7 @@ export class OpenAIEmbedding implements Embedding {
     return results as EmbeddingVector[];
   }
 
-  /**
-   * Estimate the token cost for embedding a set of texts.
-   * Rough heuristic: ~4 chars per token for code.
-   * Cost rates are model-specific; local models (Ollama, etc.) are free.
-   */
-  estimateTokens(texts: string[]): { totalChars: number; estimatedTokens: number; estimatedCostUsd: number } {
+  estimateTokens(texts: string[]): TokenEstimate {
     const totalChars = texts.reduce((sum, t) => sum + t.length, 0);
     const estimatedTokens = Math.ceil(totalChars / 4);
 
@@ -178,9 +171,6 @@ export class OpenAIEmbedding implements Embedding {
     return { totalChars, estimatedTokens, estimatedCostUsd };
   }
 
-  /**
-   * Set a value in the memory cache, evicting the oldest entry if at capacity.
-   */
   private setMemoryCache(hash: string, vec: EmbeddingVector): void {
     if (this.memoryCache.size >= MAX_MEMORY_CACHE_SIZE && !this.memoryCache.has(hash)) {
       // Delete the oldest entry (first key from the iterator)
@@ -234,7 +224,6 @@ export class OpenAIEmbedding implements Embedding {
       }
     }
 
-    // Unreachable but satisfies TypeScript compiler
     throw new EmbeddingError('Unexpected: exhausted retries');
   }
 
@@ -244,7 +233,6 @@ export class OpenAIEmbedding implements Embedding {
       input: texts.map(truncateToSafeLength),
     });
 
-    // Sort by index to guarantee order (API may return out-of-order)
     const sorted = response.data.sort((a, b) => a.index - b.index);
     return sorted.map(d => d.embedding);
   }
@@ -278,9 +266,7 @@ export class OpenAIEmbedding implements Embedding {
     // Fire-and-forget async write
     fsp.mkdir(path.dirname(filepath), { recursive: true })
       .then(() => fsp.writeFile(filepath, JSON.stringify(vector)))
-      .catch(() => {
-        // Non-fatal: cache write failure doesn't block indexing
-      });
+      .catch(() => {});
   }
 }
 

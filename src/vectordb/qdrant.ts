@@ -26,7 +26,6 @@ export class QdrantVectorDB implements VectorDB {
         },
       });
 
-      // Create payload indexes for filtering and full-text search
       await Promise.all([
         this.client.createPayloadIndex(name, {
           field_name: 'content',
@@ -129,10 +128,7 @@ export class QdrantVectorDB implements VectorDB {
         with_payload: true,
       });
 
-      // Rank text results by query term frequency so RRF receives a meaningful ordering
       const rankedTextResults = rankByTermFrequency(textResponse.points, params.queryText);
-
-      // 3. Client-side RRF fusion blending rank position with raw similarity scores
       return reciprocalRankFusion(denseResults, rankedTextResults, params.limit);
     } catch (err) {
       throw new VectorDBError(`Search failed in collection "${name}"`, err);
@@ -153,30 +149,19 @@ export class QdrantVectorDB implements VectorDB {
   }
 }
 
-// --- Text Result Ranking ---
-
 interface RankedPoint {
   id: string | number;
   payload?: Record<string, unknown> | null;
-  rawScore: number; // normalized TF score (0-1)
+  rawScore: number;
 }
 
-/**
- * Rank text-match results by normalized term frequency.
- *
- * Qdrant's scroll API returns text-filtered points in storage order (not by
- * relevance). Before feeding these into RRF, we score each result by how many
- * query terms appear in its content, normalized by word count to avoid bias
- * toward longer chunks. Returns points sorted best-first with rawScore attached
- * so RRF can blend rank position with content-based signal.
- */
+// Rank text-match results by normalized term frequency so RRF receives a meaningful ordering.
 export function rankByTermFrequency(
   points: { id: string | number; payload?: Record<string, unknown> | null }[],
   queryText: string,
 ): RankedPoint[] {
   if (points.length === 0) return [];
 
-  // Split query into individual terms, deduplicate, and build escaped regex patterns
   const terms = [...new Set(queryText.toLowerCase().split(/\s+/).filter(t => t.length > 0))];
   if (terms.length === 0) return points.map(p => ({ ...p, rawScore: 0 }));
 
@@ -186,31 +171,24 @@ export function rankByTermFrequency(
     const content = ((point.payload as Record<string, unknown> | undefined)?.content as string) ?? '';
     const wordCount = Math.max(1, content.split(/\s+/).length);
 
-    // Count total term occurrences across all query terms
     let hits = 0;
     for (const pattern of termPatterns) {
-      pattern.lastIndex = 0; // reset stateful regex
+      pattern.lastIndex = 0;
       const matches = content.match(pattern);
       hits += matches ? matches.length : 0;
     }
 
-    // Normalize by word count (TF = hits / total words)
     const tf = hits / wordCount;
     return { point, tf };
   });
 
-  // Sort by TF descending (best matches first)
   scored.sort((a, b) => b.tf - a.tf);
-
-  // Normalize TF to 0-1 range for blending with cosine similarity
   const maxTf = scored[0].tf;
   return scored.map(s => ({
     ...s.point,
     rawScore: maxTf > 0 ? s.tf / maxTf : 0,
   }));
 }
-
-// --- Reciprocal Rank Fusion ---
 
 interface ScoredPayload {
   id: string | number;
@@ -242,17 +220,12 @@ export function reciprocalRankFusion(
 ): SearchResult[] {
   const scoreMap = new Map<string | number, { score: number; payload: ScoredPayload }>();
 
-  // Hybrid RRF blended with raw similarity:
-  //   score = alpha * (1/(k + rank + 1)) + (1-alpha) * rawSimilarity
-  // alpha=0.7 preserves rank-fusion stability while 0.3 raw similarity
-  // injects query-specific signal so identical ranks get different scores.
   const blendedScore = (rank: number, rawSimilarity: number) =>
     RRF_ALPHA * (1 / (RRF_K + rank + 1)) + (1 - RRF_ALPHA) * rawSimilarity;
 
-  // Score from dense results (cosine similarity from Qdrant)
   for (let rank = 0; rank < denseResults.length; rank++) {
     const point = denseResults[rank];
-    const rawSim = point.score ?? 0; // cosine similarity (0-1)
+    const rawSim = point.score ?? 0;
     const score = blendedScore(rank, rawSim);
     const existing = scoreMap.get(point.id);
     const payload = extractPayload(point);
@@ -263,7 +236,6 @@ export function reciprocalRankFusion(
     }
   }
 
-  // Score from text results (normalized TF from rankByTermFrequency)
   for (let rank = 0; rank < textResults.length; rank++) {
     const point = textResults[rank];
     const score = blendedScore(rank, point.rawScore);
