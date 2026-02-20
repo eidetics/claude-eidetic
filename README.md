@@ -10,19 +10,37 @@ Semantic code search and documentation caching for Claude Code. Index your codeb
 
 **As a Claude Code plugin (recommended):**
 
-```shell
-claude plugin add /path/to/eidetic/plugin
+The `plugin/` directory is a plugin marketplace. Install from within Claude Code:
+
+```
+/plugin marketplace add https://github.com/eidetics/eidetic --subdir plugin
 ```
 
-The plugin auto-starts the MCP server, registers skills and hooks, and configures everything. No manual setup needed.
+Or for local development, add the marketplace to `~/.claude/settings.json`:
 
-**As a standalone MCP server:**
+```json
+{
+  "extraKnownMarketplaces": {
+    "claude-eidetic": {
+      "source": "file",
+      "path": "/path/to/eidetic/plugin/.claude-plugin/marketplace.json"
+    }
+  },
+  "enabledPlugins": {
+    "claude-eidetic@claude-eidetic": true
+  }
+}
+```
+
+Restart Claude Code after installing. The plugin provides the MCP server, skills (`/catchup`, `/wrapup`, `/eidetic:search`, `/eidetic:index`), and hooks.
+
+**As a standalone MCP server (no skills/hooks):**
 
 ```shell
-npm install -g claude-eidetic
-export OPENAI_API_KEY="sk-..."
-claude-eidetic
+claude mcp add claude-eidetic -- npx claude-eidetic
 ```
+
+This only adds the MCP server. For the full experience, use the plugin method above.
 
 **First use:**
 
