@@ -1,0 +1,9 @@
+{"type":"user","timestamp":"2026-02-19T10:00:00Z","gitBranch":"feat/auth","message":{"role":"user","content":[{"type":"text","text":"Add JWT validation to the auth middleware"}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:00:15Z","message":{"role":"assistant","content":[{"type":"text","text":"I'll add JWT validation."},{"type":"tool_use","id":"toolu_01","name":"Read","input":{"file_path":"/project/src/auth.ts"}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:00:30Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_02","name":"Edit","input":{"file_path":"/project/src/auth.ts","old_string":"// TODO","new_string":"validateJWT(token)"}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:01:00Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_03","name":"Write","input":{"file_path":"/project/src/middleware/jwt.ts","content":"export function validateJWT..."}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:01:30Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_04","name":"Bash","input":{"command":"npm test"}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:02:00Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_05","name":"TaskCreate","input":{"subject":"Implement refresh token logic","description":"Add refresh token handling"}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:02:15Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_06","name":"TaskUpdate","input":{"taskId":"1","subject":"Fix auth bug","status":"completed"}}]}}
+{"type":"assistant","timestamp":"2026-02-19T10:02:20Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_07","name":"mcp__eidetic__search_code","input":{"query":"auth"}}]}}
+{"type":"user","timestamp":"2026-02-19T10:02:30Z","message":{"role":"user","content":[{"type":"text","text":"Great, now add rate limiting"}]}}
