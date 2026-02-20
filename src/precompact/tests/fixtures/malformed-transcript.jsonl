@@ -1,0 +1,4 @@
+not valid json at all
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"/valid.ts"}}]}}
+{ incomplete json
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Valid message"}]}}
