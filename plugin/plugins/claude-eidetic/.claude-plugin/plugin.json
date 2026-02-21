@@ -2,7 +2,7 @@
   "name": "claude-eidetic",
   "version": "1.0.0",
   "description": "Semantic code search MCP server with skills, hooks, and auto-provisioning",
-  "author": { "name": "Tawan" },
+  "author": { "name": "eidetics" },
   "license": "MIT",
   "keywords": ["code-search", "semantic-search", "mcp", "eidetic"]
 }
