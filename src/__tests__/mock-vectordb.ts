@@ -70,6 +70,51 @@ export class MockVectorDB implements VectorDB {
     }));
   }
 
+  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+    this.calls.push({ method: 'getById', args: [name, id] });
+    const col = this.collections.get(name);
+    if (!col) return null;
+    // Search by document id or by relativePath (memory stores UUID in relativePath)
+    const doc = col.documents.find(d => d.id === id || d.relativePath === id);
+    if (!doc) return null;
+    return {
+      payload: {
+        content: doc.content,
+        relativePath: doc.relativePath,
+        fileExtension: doc.fileExtension,
+        language: doc.language,
+        startLine: doc.startLine,
+        endLine: doc.endLine,
+        // Preserve any extra fields stored via updatePoint
+        ...(doc as unknown as Record<string, unknown>),
+      },
+      vector: doc.vector,
+    };
+  }
+
+  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+    this.calls.push({ method: 'updatePoint', args: [name, id, vector, payload] });
+    const col = this.collections.get(name);
+    if (!col) throw new Error(`Collection "${name}" does not exist`);
+
+    // Remove existing point with same id (by relativePath for memories, or by id)
+    col.documents = col.documents.filter(d => d.id !== id && d.relativePath !== id);
+
+    // Insert the updated point
+    col.documents.push({
+      id,
+      content: String(payload.content ?? ''),
+      vector,
+      relativePath: String(payload.relativePath ?? ''),
+      startLine: Number(payload.startLine ?? 0),
+      endLine: Number(payload.endLine ?? 0),
+      fileExtension: String(payload.fileExtension ?? ''),
+      language: String(payload.language ?? ''),
+      // Store extra payload fields on the document object for getById retrieval
+      ...payload,
+    } as CodeDocument);
+  }
+
   async deleteByPath(name: string, relativePath: string): Promise<void> {
     this.calls.push({ method: 'deleteByPath', args: [name, relativePath] });
     const col = this.collections.get(name);

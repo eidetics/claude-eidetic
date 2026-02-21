@@ -24,6 +24,9 @@ import { StateManager, cleanupOrphanedSnapshots } from './state/snapshot.js';
 import { ToolHandlers, handleReadFile } from './tools.js';
 import { TOOL_DEFINITIONS } from './tool-schemas.js';
 import { getSetupErrorMessage } from './setup-message.js';
+import { MemoryStore } from './memory/store.js';
+import { MemoryHistory } from './memory/history.js';
+import { getMemoryDbPath } from './paths.js';
 
 const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 
@@ -58,7 +61,15 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 - After fetching docs via query-docs or WebFetch, cache them: \`index_document(content="...", source="<url>", library="<name>", topic="<topic>")\`
 - Next time you need the same docs: \`search_documents(query="...", library="<name>")\` (~20 tokens/result)
 - Docs are grouped by library — one collection per library, searchable across topics
-- Stale docs (past TTL) still return results but are flagged \`[STALE]\``;
+- Stale docs (past TTL) still return results but are flagged \`[STALE]\`
+
+**Persistent memory (cross-session developer knowledge):**
+- \`add_memory(content="...")\` → extracts facts about coding style, tools, architecture, etc.
+- \`search_memory(query="...")\` → find relevant memories by semantic search
+- \`list_memories()\` → see all stored memories grouped by category
+- \`delete_memory(id="...")\` → remove a specific memory
+- \`memory_history(id="...")\` → view change log for a memory
+- Memories are automatically deduplicated — adding similar facts updates existing ones`;
 
 async function main() {
   const config = loadConfig();
@@ -89,6 +100,17 @@ async function main() {
 
     const state = new StateManager();
     handlers = new ToolHandlers(embedding, vectordb, state);
+
+    // Initialize memory subsystem
+    try {
+      const memoryHistory = new MemoryHistory(getMemoryDbPath());
+      const memoryStore = new MemoryStore(embedding, vectordb, memoryHistory);
+      handlers.setMemoryStore(memoryStore);
+      console.log('Memory system initialized.');
+    } catch (memErr) {
+      console.warn(`Memory system initialization failed: ${memErr instanceof Error ? memErr.message : String(memErr)}`);
+      console.warn('Memory tools will return errors. Other tools work normally.');
+    }
   } catch (err) {
     setupError = err instanceof Error ? err.message : String(err);
     console.warn(`Eidetic initialization failed: ${setupError}`);
@@ -136,6 +158,16 @@ async function main() {
         return handlers.handleIndexDocument(args ?? {});
       case 'search_documents':
         return handlers.handleSearchDocuments(args ?? {});
+      case 'add_memory':
+        return handlers.handleAddMemory(args ?? {});
+      case 'search_memory':
+        return handlers.handleSearchMemory(args ?? {});
+      case 'list_memories':
+        return handlers.handleListMemories(args ?? {});
+      case 'delete_memory':
+        return handlers.handleDeleteMemory(args ?? {});
+      case 'memory_history':
+        return handlers.handleMemoryHistory(args ?? {});
       default:
         return {
           content: [{ type: 'text' as const, text: `Unknown tool: ${name}` }],

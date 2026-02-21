@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { registerProject, resolveProject, listProjects } from '../registry.js';
 
-// We need to mock getRegistryPath to use a temp dir
 let tmpDir: string;
 
 vi.mock('../../paths.js', () => ({
@@ -11,8 +11,6 @@ vi.mock('../../paths.js', () => ({
   normalizePath: (p: string) => p,
   getDataDir: () => tmpDir,
 }));
-
-import { registerProject, resolveProject, listProjects } from '../registry.js';
 
 describe('registry', () => {
   beforeEach(() => {

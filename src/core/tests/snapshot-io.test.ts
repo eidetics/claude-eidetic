@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { saveSnapshot, loadSnapshot, deleteSnapshot, snapshotExists } from '../snapshot-io.js';
 
 let tmpDir: string;
 
@@ -11,8 +12,6 @@ vi.mock('../../paths.js', () => ({
   normalizePath: (p: string) => p,
   getDataDir: () => tmpDir,
 }));
-
-import { saveSnapshot, loadSnapshot, deleteSnapshot, snapshotExists } from '../snapshot-io.js';
 
 describe('snapshot-io', () => {
   beforeEach(() => {

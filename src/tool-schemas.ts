@@ -262,6 +262,98 @@ export const TOOL_DEFINITIONS = [
     },
   },
   {
+    name: 'add_memory',
+    description: 'Extract and store developer knowledge from text. Uses LLM to identify facts about coding style, tools, architecture, conventions, debugging insights, and workflow preferences. Automatically deduplicates against existing memories.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        content: {
+          type: 'string',
+          description: 'Text containing developer knowledge to extract and store (conversation snippets, notes, preferences).',
+        },
+        source: {
+          type: 'string',
+          description: 'Optional source identifier (e.g., "conversation", "claude-code", "user-note").',
+        },
+      },
+      required: ['content'],
+    },
+  },
+  {
+    name: 'search_memory',
+    description: 'Search stored developer memories using natural language. Returns semantically similar memories ranked by relevance.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Natural language query to search memories.',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results.',
+          default: 10,
+          maximum: 50,
+        },
+        category: {
+          type: 'string',
+          description: 'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
+          enum: ['coding_style', 'tools', 'architecture', 'conventions', 'debugging', 'workflow', 'preferences'],
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'list_memories',
+    description: 'List all stored developer memories, optionally filtered by category.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        category: {
+          type: 'string',
+          description: 'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
+          enum: ['coding_style', 'tools', 'architecture', 'conventions', 'debugging', 'workflow', 'preferences'],
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of memories to return.',
+          default: 50,
+          maximum: 100,
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'delete_memory',
+    description: 'Delete a specific memory by its ID.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        id: {
+          type: 'string',
+          description: 'The UUID of the memory to delete.',
+        },
+      },
+      required: ['id'],
+    },
+  },
+  {
+    name: 'memory_history',
+    description: 'View the change history for a specific memory (additions, updates, deletions).',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        id: {
+          type: 'string',
+          description: 'The UUID of the memory to view history for.',
+        },
+      },
+      required: ['id'],
+    },
+  },
+  {
     name: '__IMPORTANT',
     description: 'Workflow guidance for efficient code search. ALWAYS index before searching. Use project names after first index. Use extensionFilter to narrow results.',
     inputSchema: {

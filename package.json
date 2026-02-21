@@ -33,6 +33,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@qdrant/js-client-rest": "^1.13.0",
+    "better-sqlite3": "^12.6.2",
     "glob": "^10.0.0",
     "openai": "^5.1.1",
     "tree-sitter": "^0.21.1",
@@ -51,6 +52,7 @@
     "@zilliz/milvus2-sdk-node": "^2.5.10"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "rimraf": "^6.0.1",

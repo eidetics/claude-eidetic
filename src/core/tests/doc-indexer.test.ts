@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { MockEmbedding } from '../../__tests__/mock-embedding.js';
 import { MockVectorDB } from '../../__tests__/mock-vectordb.js';
+import { indexDocument } from '../doc-indexer.js';
 
 let tmpDir: string;
 
@@ -22,8 +23,6 @@ vi.mock('../../config.js', () => ({
     indexingConcurrency: 4,
   }),
 }));
-
-import { indexDocument } from '../doc-indexer.js';
 
 describe('indexDocument', () => {
   let embedding: MockEmbedding;
