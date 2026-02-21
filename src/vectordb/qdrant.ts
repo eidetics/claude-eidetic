@@ -150,8 +150,8 @@ export class QdrantVectorDB implements VectorDB {
         payload: (point.payload ?? {}) as Record<string, unknown>,
         vector,
       };
-    } catch {
-      return null;
+    } catch (err) {
+      throw new VectorDBError(`Failed to retrieve point "${id}" from "${name}"`, err);
     }
   }
 

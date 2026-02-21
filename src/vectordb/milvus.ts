@@ -312,8 +312,8 @@ export class MilvusVectorDB implements VectorDB {
         payload: point as Record<string, unknown>,
         vector: point.vector ?? [],
       };
-    } catch {
-      return null;
+    } catch (err) {
+      throw new VectorDBError(`Failed to retrieve point "${id}" from "${name}"`, err);
     }
   }
 
