@@ -45,6 +45,10 @@ export function getDocMetadataPath(): string {
   return `${getDataDir()}/doc-metadata.json`;
 }
 
+export function getMemoryDbPath(): string {
+  return `${getDataDir()}/memory-history.db`;
+}
+
 export function docCollectionName(library: string): string {
   const safe = library
     .toLowerCase()

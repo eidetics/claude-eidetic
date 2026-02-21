@@ -135,6 +135,41 @@ export class QdrantVectorDB implements VectorDB {
     }
   }
 
+  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+    try {
+      const results = await this.client.retrieve(name, {
+        ids: [id],
+        with_payload: true,
+        with_vector: true,
+      });
+      if (results.length === 0) return null;
+      const point = results[0];
+      const vectors = point.vector as Record<string, number[]> | number[] | undefined;
+      const vector = Array.isArray(vectors) ? vectors : (vectors?.dense ?? []);
+      return {
+        payload: (point.payload ?? {}) as Record<string, unknown>,
+        vector,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+    try {
+      await this.client.upsert(name, {
+        wait: true,
+        points: [{
+          id,
+          vector: { dense: vector },
+          payload,
+        }],
+      });
+    } catch (err) {
+      throw new VectorDBError(`Failed to update point "${id}" in "${name}"`, err);
+    }
+  }
+
   async deleteByPath(name: string, relativePath: string): Promise<void> {
     try {
       await this.client.delete(name, {

@@ -298,6 +298,38 @@ export class MilvusVectorDB implements VectorDB {
     }
   }
 
+  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+    await this.ready();
+    try {
+      const result = await this.client.get({
+        collection_name: name,
+        ids: [id],
+        output_fields: ['*'],
+      });
+      if (!result.data?.length) return null;
+      const point = result.data[0];
+      return {
+        payload: point as Record<string, unknown>,
+        vector: point.vector ?? [],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+    await this.ready();
+    await this.ensureLoaded(name);
+    try {
+      await this.client.upsert({
+        collection_name: name,
+        data: [{ id, vector, ...payload }],
+      });
+    } catch (err) {
+      throw new VectorDBError(`Failed to update point "${id}" in Milvus collection "${name}"`, err);
+    }
+  }
+
   async deleteByPath(name: string, relativePath: string): Promise<void> {
     await this.ready();
     await this.ensureLoaded(name);

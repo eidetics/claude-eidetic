@@ -9,7 +9,8 @@ import { StateManager } from './state/snapshot.js';
 import { registerProject, resolveProject, listProjects } from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
 import type { VectorDB } from './vectordb/types.js';
-import { textResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults } from './format.js';
+import { textResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults, formatMemoryActions, formatMemorySearchResults, formatMemoryList, formatMemoryHistory } from './format.js';
+import type { MemoryStore } from './memory/store.js';
 
 function resolvePath(args: Record<string, unknown>): string | undefined {
   const pathArg = args.path as string | undefined;
@@ -53,11 +54,17 @@ async function withMutex<T>(key: string, fn: () => Promise<T>): Promise<T> {
 }
 
 export class ToolHandlers {
+  private memoryStore: MemoryStore | null = null;
+
   constructor(
     private embedding: Embedding,
     private vectordb: VectorDB,
     private state: StateManager,
   ) {}
+
+  setMemoryStore(store: MemoryStore): void {
+    this.memoryStore = store;
+  }
 
   async handleIndexCodebase(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
@@ -232,6 +239,87 @@ export class ToolHandlers {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return textResult(`Error: ${message}`);
+    }
+  }
+
+  async handleAddMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
+
+    const content = args.content as string | undefined;
+    if (!content) return textResult('Error: "content" is required. Provide text containing developer knowledge to extract.');
+
+    const source = args.source as string | undefined;
+
+    try {
+      const actions = await this.memoryStore.addMemory(content, source);
+      return textResult(formatMemoryActions(actions));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error adding memory: ${message}`);
+    }
+  }
+
+  async handleSearchMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
+
+    const query = args.query as string | undefined;
+    if (!query) return textResult('Error: "query" is required. Provide a natural language search query.');
+
+    const limit = (args.limit as number | undefined) ?? 10;
+    const category = args.category as string | undefined;
+
+    try {
+      const results = await this.memoryStore.searchMemory(query, limit, category);
+      return textResult(formatMemorySearchResults(results, query));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error searching memories: ${message}`);
+    }
+  }
+
+  async handleListMemories(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
+
+    const category = args.category as string | undefined;
+    const limit = (args.limit as number | undefined) ?? 50;
+
+    try {
+      const results = await this.memoryStore.listMemories(category, limit);
+      return textResult(formatMemoryList(results));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error listing memories: ${message}`);
+    }
+  }
+
+  async handleDeleteMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
+
+    const id = args.id as string | undefined;
+    if (!id) return textResult('Error: "id" is required. Provide the UUID of the memory to delete.');
+
+    try {
+      const deleted = await this.memoryStore.deleteMemory(id);
+      if (!deleted) return textResult(`Memory not found: ${id}`);
+      return textResult(`Memory deleted: ${id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error deleting memory: ${message}`);
+    }
+  }
+
+  async handleMemoryHistory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
+
+    const id = args.id as string | undefined;
+    if (!id) return textResult('Error: "id" is required. Provide the UUID of the memory to view history for.');
+
+    try {
+      const entries = this.memoryStore.getHistory(id);
+      return textResult(formatMemoryHistory(entries, id));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error retrieving memory history: ${message}`);
     }
   }
 }

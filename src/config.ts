@@ -25,11 +25,18 @@ const configSchema = z.object({
     (val) => typeof val === 'string' ? JSON.parse(val) : val,
     z.array(z.string()).default([]),
   ),
+  memoryLlmProvider: z.enum(['openai', 'ollama']).default('openai'),
+  memoryLlmModel: z.string().optional(),
+  memoryLlmBaseUrl: z.string().optional(),
+  memoryLlmApiKey: z.string().optional(),
 }).transform((cfg) => ({
   ...cfg,
   // Default embedding model depends on provider
   embeddingModel: cfg.embeddingModel
     ?? (cfg.embeddingProvider === 'ollama' ? 'nomic-embed-text' : 'text-embedding-3-small'),
+  // Default memory LLM model depends on provider
+  memoryLlmModel: cfg.memoryLlmModel
+    ?? (cfg.memoryLlmProvider === 'ollama' ? 'llama3.2' : 'gpt-4o-mini'),
 }));
 
 export type Config = z.infer<typeof configSchema>;
@@ -53,6 +60,10 @@ export function loadConfig(): Config {
     eideticDataDir: process.env.EIDETIC_DATA_DIR,
     customExtensions: process.env.CUSTOM_EXTENSIONS,
     customIgnorePatterns: process.env.CUSTOM_IGNORE_PATTERNS,
+    memoryLlmProvider: process.env.MEMORY_LLM_PROVIDER,
+    memoryLlmModel: process.env.MEMORY_LLM_MODEL || undefined,
+    memoryLlmBaseUrl: process.env.MEMORY_LLM_BASE_URL || undefined,
+    memoryLlmApiKey: process.env.MEMORY_LLM_API_KEY?.trim().replace(/^["']|["']$/g, '') || undefined,
   };
 
   const result = configSchema.safeParse(raw);

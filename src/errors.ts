@@ -11,3 +11,4 @@ export class VectorDBError extends EideticError {}
 export class IndexingError extends EideticError {}
 export class SearchError extends EideticError {}
 export class BootstrapError extends EideticError {}
+export class MemoryError extends EideticError {}
