@@ -6,13 +6,13 @@ import { MockVectorDB } from '../../__tests__/mock-vectordb.js';
 import { join } from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { chatCompletion } from '../llm.js';
 
 // Mock the LLM module
 vi.mock('../llm.js', () => ({
   chatCompletion: vi.fn(),
 }));
 
-import { chatCompletion } from '../llm.js';
 const mockChatCompletion = vi.mocked(chatCompletion);
 
 describe('MemoryStore', () => {

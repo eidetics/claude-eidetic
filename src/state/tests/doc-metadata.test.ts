@@ -1,16 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { vi } from 'vitest';
-
-let tmpDir: string;
-
-vi.mock('../../paths.js', () => ({
-  getDocMetadataPath: () => path.join(tmpDir, 'doc-metadata.json'),
-  getDataDir: () => tmpDir,
-}));
-
 import {
   loadDocMetadata,
   saveDocMetadata,
@@ -23,6 +14,13 @@ import {
   listDocLibraries,
   type DocEntry,
 } from '../doc-metadata.js';
+
+let tmpDir: string;
+
+vi.mock('../../paths.js', () => ({
+  getDocMetadataPath: () => path.join(tmpDir, 'doc-metadata.json'),
+  getDataDir: () => tmpDir,
+}));
 
 function makeEntry(overrides: Partial<DocEntry> = {}): DocEntry {
   return {
