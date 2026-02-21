@@ -10,13 +10,25 @@ Semantic code search and documentation caching for Claude Code. Index your codeb
 
 **As a Claude Code plugin (recommended):**
 
-The `plugin/` directory is a plugin marketplace. Install from within Claude Code:
+The `plugin/` directory is a Claude Code plugin marketplace. Add it to `~/.claude/settings.json`:
 
-```
-/plugin marketplace add https://github.com/eidetics/eidetic --subdir plugin
+```json
+{
+  "extraKnownMarketplaces": {
+    "claude-eidetic": {
+      "source": "github",
+      "owner": "eidetics",
+      "repo": "claude-eidetic",
+      "path": "plugin"
+    }
+  },
+  "enabledPlugins": {
+    "claude-eidetic@claude-eidetic": true
+  }
+}
 ```
 
-Or for local development, add the marketplace to `~/.claude/settings.json`:
+For local development, use a file source instead:
 
 ```json
 {
