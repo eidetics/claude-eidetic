@@ -50,7 +50,7 @@ const CATEGORY_BOOST: Record<string, number> = {
   config: 0.70,
   generated: 0.60,
 };
-const DEFAULT_BOOST = 0.85; // legacy points without fileCategory
+const DEFAULT_BOOST = 1.0; // legacy points without fileCategory get no penalty
 
 export function applyCategoryBoost(results: SearchResult[]): SearchResult[] {
   return results

@@ -45,16 +45,16 @@ describe('applyCategoryBoost', () => {
     expect(boosted.score).toBeCloseTo(0.60);
   });
 
-  it('applies DEFAULT_BOOST (0.85) to results without fileCategory', () => {
+  it('applies no penalty (1.0) to results without fileCategory (legacy points)', () => {
     const result = makeResult({ score: 1.0 }); // no fileCategory
     const [boosted] = applyCategoryBoost([result]);
-    expect(boosted.score).toBeCloseTo(0.85);
+    expect(boosted.score).toBeCloseTo(1.0);
   });
 
-  it('applies DEFAULT_BOOST (0.85) to results with empty fileCategory', () => {
+  it('applies no penalty (1.0) to results with empty fileCategory (legacy points)', () => {
     const result = makeResult({ score: 1.0, fileCategory: '' });
     const [boosted] = applyCategoryBoost([result]);
-    expect(boosted.score).toBeCloseTo(0.85);
+    expect(boosted.score).toBeCloseTo(1.0);
   });
 
   it('re-sorts results after boosting', () => {

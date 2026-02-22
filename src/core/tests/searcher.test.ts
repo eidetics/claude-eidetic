@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deduplicateResults, formatSearchResults, formatCompactResults } from '../searcher.js';
+import { deduplicateResults, formatSearchResults, formatCompactResults, applyCategoryBoost } from '../searcher.js';
 import type { SearchResult } from '../../vectordb/types.js';
 
 function makeResult(overrides: Partial<SearchResult> = {}): SearchResult {
@@ -14,6 +14,41 @@ function makeResult(overrides: Partial<SearchResult> = {}): SearchResult {
     ...overrides,
   };
 }
+
+describe('applyCategoryBoost', () => {
+  it('does not penalize legacy results without fileCategory', () => {
+    const result = makeResult({ score: 1.0, fileCategory: undefined });
+    const boosted = applyCategoryBoost([result]);
+    expect(boosted[0].score).toBe(1.0);
+  });
+
+  it('does not penalize results with empty string fileCategory', () => {
+    const result = makeResult({ score: 1.0, fileCategory: '' });
+    const boosted = applyCategoryBoost([result]);
+    expect(boosted[0].score).toBe(1.0);
+  });
+
+  it('applies no multiplier to source files', () => {
+    const result = makeResult({ score: 0.8, fileCategory: 'source' });
+    const boosted = applyCategoryBoost([result]);
+    expect(boosted[0].score).toBe(0.8);
+  });
+
+  it('reduces score for test files', () => {
+    const result = makeResult({ score: 1.0, fileCategory: 'test' });
+    const boosted = applyCategoryBoost([result]);
+    expect(boosted[0].score).toBeLessThan(1.0);
+  });
+
+  it('sorts results by boosted score descending', () => {
+    const results = [
+      makeResult({ relativePath: 'a.test.ts', score: 0.9, fileCategory: 'test' }),   // 0.9 * 0.75 = 0.675
+      makeResult({ relativePath: 'b.ts', score: 0.7, fileCategory: 'source' }),       // 0.7 * 1.0 = 0.7
+    ];
+    const boosted = applyCategoryBoost(results);
+    expect(boosted[0].relativePath).toBe('b.ts');
+  });
+});
 
 describe('deduplicateResults', () => {
   it('respects limit', () => {
