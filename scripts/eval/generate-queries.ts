@@ -120,6 +120,7 @@ function jaccardSimilarity(a: string, b: string): number {
 // Diversity filter: remove low-quality or duplicate generated queries
 function applyDiversityFilter(
   candidates: (GeneratedQueryRaw & { expectedFile: string })[],
+  reference: (GeneratedQueryRaw & { expectedFile: string })[] = [],
 ): (GeneratedQueryRaw & { expectedFile: string })[] {
   const filtered: typeof candidates = [];
 
@@ -133,8 +134,10 @@ function applyDiversityFilter(
     // Reject very short queries
     if (q.text.trim().length < 10) continue;
 
-    // Jaccard dedup: if pair targets same file and similarity > 0.7, drop shorter
-    const isDup = filtered.some(existing => {
+    // Jaccard dedup: check against both already-filtered candidates and the
+    // reference list (e.g. preserved queries from a previous run) so that
+    // near-duplicates across the preserved/new boundary are also caught.
+    const isDup = [...reference, ...filtered].some(existing => {
       if (existing.expectedFile !== q.expectedFile) return false;
       const sim = jaccardSimilarity(existing.text, q.text);
       return sim > 0.7;
@@ -304,7 +307,7 @@ async function main() {
   });
   const newCandidates = allCandidates.filter(q => !preserved.includes(q));
 
-  const filtered = applyDiversityFilter(newCandidates);
+  const filtered = applyDiversityFilter(newCandidates, preserved);
   const allFiltered = [...preserved, ...filtered];
 
   // Ensure min 20 distinct files covered

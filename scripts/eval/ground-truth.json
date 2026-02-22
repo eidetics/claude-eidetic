@@ -221,8 +221,8 @@
       "type": "natural",
       "source": "hand",
       "expectedFile": "src/core/searcher.ts",
-      "expectedStartLine": 46,
-      "expectedEndLine": 68
+      "expectedStartLine": 64,
+      "expectedEndLine": 86
     },
     {
       "id": "hand-24",
