@@ -1,6 +1,6 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { randomUUID } from 'node:crypto';
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult } from './types.js';
+import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from './types.js';
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
 
@@ -92,6 +92,10 @@ export class QdrantVectorDB implements VectorDB {
               fileExtension: doc.fileExtension,
               language: doc.language,
               fileCategory: doc.fileCategory ?? 'source',
+              symbolName: doc.symbolName ?? '',
+              symbolKind: doc.symbolKind ?? '',
+              symbolSignature: doc.symbolSignature ?? '',
+              parentSymbol: doc.parentSymbol ?? '',
             },
           })),
         });
@@ -186,6 +190,47 @@ export class QdrantVectorDB implements VectorDB {
       });
     } catch (err) {
       throw new VectorDBError(`Failed to delete documents for path "${relativePath}" from "${name}"`, err);
+    }
+  }
+
+  async listSymbols(name: string): Promise<SymbolEntry[]> {
+    try {
+      const results: SymbolEntry[] = [];
+      let offset: string | number | undefined = undefined;
+      const pageSize = 1000;
+
+      while (true) {
+        const response = await this.client.scroll(name, {
+          filter: {
+            must_not: [{ is_empty: { key: 'symbolName' } }],
+          },
+          limit: pageSize,
+          with_payload: true,
+          with_vector: false,
+          ...(offset !== undefined ? { offset } : {}),
+        });
+
+        for (const point of response.points) {
+          const p = point.payload ?? {};
+          const symName = String(p.symbolName ?? '');
+          if (!symName) continue;
+          results.push({
+            name: symName,
+            kind: String(p.symbolKind ?? ''),
+            relativePath: String(p.relativePath ?? ''),
+            startLine: Number(p.startLine ?? 0),
+            ...(p.symbolSignature ? { signature: String(p.symbolSignature) } : {}),
+            ...(p.parentSymbol ? { parentName: String(p.parentSymbol) } : {}),
+          });
+        }
+
+        if (response.next_page_offset == null || response.points.length < pageSize) break;
+        offset = response.next_page_offset as string | number;
+      }
+
+      return results;
+    } catch (err) {
+      throw new VectorDBError(`Failed to list symbols from "${name}"`, err);
     }
   }
 }

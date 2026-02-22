@@ -168,6 +168,10 @@ async function main() {
         return handlers.handleDeleteMemory(args ?? {});
       case 'memory_history':
         return handlers.handleMemoryHistory(args ?? {});
+      case 'browse_structure':
+        return handlers.handleBrowseStructure(args ?? {});
+      case 'list_symbols':
+        return handlers.handleListSymbols(args ?? {});
       default:
         return {
           content: [{ type: 'text' as const, text: `Unknown tool: ${name}` }],

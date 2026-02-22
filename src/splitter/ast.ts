@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Splitter, CodeChunk } from './types.js';
+import { extractSymbolInfo, isContainerType } from './symbol-extract.js';
 
 // tree-sitter and language parsers are native CommonJS modules
 const require = createRequire(import.meta.url);
@@ -27,9 +28,9 @@ const languageParsers: Record<string, () => unknown> = {
 
 // AST node types that represent logical code units per language
 const SPLITTABLE_TYPES: Record<string, string[]> = {
-  javascript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'export_statement'],
-  typescript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'export_statement', 'interface_declaration', 'type_alias_declaration'],
-  tsx: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'export_statement', 'interface_declaration', 'type_alias_declaration'],
+  javascript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition'],
+  typescript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'interface_declaration', 'type_alias_declaration'],
+  tsx: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'interface_declaration', 'type_alias_declaration'],
   python: ['function_definition', 'class_definition', 'decorated_definition', 'async_function_definition'],
   java: ['method_declaration', 'class_declaration', 'interface_declaration', 'constructor_declaration'],
   cpp: ['function_definition', 'class_specifier', 'namespace_definition', 'declaration'],
@@ -114,21 +115,42 @@ export class AstSplitter implements Splitter {
   ): CodeChunk[] {
     const chunks: CodeChunk[] = [];
 
-    const traverse = (current: typeof node) => {
+    const traverse = (current: typeof node, parentName?: string) => {
       if (splittableTypes.includes(current.type)) {
         const text = code.slice(current.startIndex, current.endIndex);
         if (text.trim().length > 0) {
-          chunks.push({
+          const symbolInfo = extractSymbolInfo(
+            current as Parameters<typeof extractSymbolInfo>[0],
+            code,
+            language,
+            parentName,
+          );
+          const chunk: CodeChunk = {
             content: text,
             startLine: current.startPosition.row + 1,
             endLine: current.endPosition.row + 1,
             language,
             filePath,
-          });
+          };
+          if (symbolInfo) {
+            chunk.symbolName = symbolInfo.name;
+            chunk.symbolKind = symbolInfo.kind;
+            chunk.symbolSignature = symbolInfo.signature;
+            if (parentName) chunk.parentSymbol = parentName;
+          }
+          chunks.push(chunk);
+
+          // If this is a container, pass its name as parentName to children
+          if (isContainerType(current.type) && symbolInfo?.name) {
+            for (const child of current.children as typeof node[]) {
+              traverse(child, symbolInfo.name);
+            }
+            return;
+          }
         }
       }
       for (const child of current.children as typeof node[]) {
-        traverse(child);
+        traverse(child, parentName);
       }
     };
 
@@ -166,6 +188,10 @@ export class AstSplitter implements Splitter {
           endLine: startLine + lineCount - 1,
           language: chunk.language,
           filePath: chunk.filePath,
+          symbolName: chunk.symbolName,
+          symbolKind: chunk.symbolKind,
+          symbolSignature: chunk.symbolSignature,
+          parentSymbol: chunk.parentSymbol,
         });
         current = addition;
         startLine = chunk.startLine + i;
@@ -183,6 +209,10 @@ export class AstSplitter implements Splitter {
         endLine: startLine + lineCount - 1,
         language: chunk.language,
         filePath: chunk.filePath,
+        symbolName: chunk.symbolName,
+        symbolKind: chunk.symbolKind,
+        symbolSignature: chunk.symbolSignature,
+        parentSymbol: chunk.parentSymbol,
       });
     }
 

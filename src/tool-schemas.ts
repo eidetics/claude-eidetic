@@ -354,6 +354,67 @@ export const TOOL_DEFINITIONS = [
     },
   },
   {
+    name: 'browse_structure',
+    description: 'Show a condensed structural map of the indexed codebase — classes, functions, methods with signatures, grouped by file. Useful for understanding architecture without reading every file.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path to the codebase directory.',
+        },
+        project: {
+          type: 'string',
+          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+        },
+        pathFilter: {
+          type: 'string',
+          description: 'Glob pattern to filter by file path (e.g., "src/core/**", "**/*.ts").',
+        },
+        kind: {
+          type: 'string',
+          description: 'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
+        },
+        maxTokens: {
+          type: 'number',
+          description: 'Approximate token budget for the output (1 token ≈ 4 chars). Default: 4000.',
+          default: 4000,
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'list_symbols',
+    description: 'List symbols (functions, classes, methods, etc.) from the indexed codebase as a compact table. Supports filtering by name, kind, or path.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path to the codebase directory.',
+        },
+        project: {
+          type: 'string',
+          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+        },
+        pathFilter: {
+          type: 'string',
+          description: 'Glob pattern to filter by file path (e.g., "src/core/**").',
+        },
+        kind: {
+          type: 'string',
+          description: 'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
+        },
+        nameFilter: {
+          type: 'string',
+          description: 'Substring filter on symbol name (case-insensitive).',
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: '__IMPORTANT',
     description: 'Workflow guidance for efficient code search. ALWAYS index before searching. Use project names after first index. Use extensionFilter to narrow results.',
     inputSchema: {

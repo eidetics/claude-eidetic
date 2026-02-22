@@ -4,6 +4,10 @@ export interface CodeChunk {
   endLine: number;
   language: string;
   filePath: string;
+  symbolName?: string;
+  symbolKind?: string;
+  symbolSignature?: string;
+  parentSymbol?: string;
 }
 
 export interface Splitter {
