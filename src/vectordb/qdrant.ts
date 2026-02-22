@@ -42,6 +42,11 @@ export class QdrantVectorDB implements VectorDB {
           field_schema: 'keyword',
           wait: true,
         }),
+        this.client.createPayloadIndex(name, {
+          field_name: 'fileCategory',
+          field_schema: 'keyword',
+          wait: true,
+        }),
       ]);
     } catch (err) {
       throw new VectorDBError(`Failed to create collection "${name}"`, err);
@@ -86,6 +91,7 @@ export class QdrantVectorDB implements VectorDB {
               endLine: doc.endLine,
               fileExtension: doc.fileExtension,
               language: doc.language,
+              fileCategory: doc.fileCategory ?? 'source',
             },
           })),
         });
@@ -233,6 +239,7 @@ interface ScoredPayload {
   endLine: number;
   fileExtension: string;
   language: string;
+  fileCategory: string;
 }
 
 export function extractPayload(point: { id: string | number; payload?: Record<string, unknown> | null }): ScoredPayload {
@@ -245,6 +252,7 @@ export function extractPayload(point: { id: string | number; payload?: Record<st
     endLine: Number(p.endLine ?? 0),
     fileExtension: String(p.fileExtension ?? ''),
     language: String(p.language ?? ''),
+    fileCategory: String(p.fileCategory ?? ''),
   };
 }
 
@@ -293,5 +301,6 @@ export function reciprocalRankFusion(
     fileExtension: payload.fileExtension,
     language: payload.language,
     score,
+    fileCategory: payload.fileCategory,
   }));
 }
