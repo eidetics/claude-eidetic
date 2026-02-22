@@ -185,6 +185,10 @@ describe('MilvusVectorDB', () => {
           fileExtension: '.ts',
           language: 'typescript',
           fileCategory: 'source',
+          symbolName: '',
+          symbolKind: '',
+          symbolSignature: '',
+          parentSymbol: '',
         }],
       });
     });

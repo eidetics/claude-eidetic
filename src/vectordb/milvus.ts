@@ -1,4 +1,4 @@
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult } from './types.js';
+import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from './types.js';
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
 
@@ -102,6 +102,10 @@ export class MilvusVectorDB implements VectorDB {
       { name: 'fileExtension', data_type: DataType.VarChar, max_length: 32 },
       { name: 'language', data_type: DataType.VarChar, max_length: 64 },
       { name: 'fileCategory', data_type: DataType.VarChar, max_length: 32 },
+      { name: 'symbolName', data_type: DataType.VarChar, max_length: 256 },
+      { name: 'symbolKind', data_type: DataType.VarChar, max_length: 64 },
+      { name: 'symbolSignature', data_type: DataType.VarChar, max_length: 512 },
+      { name: 'parentSymbol', data_type: DataType.VarChar, max_length: 256 },
     ];
 
     const functions = [{
@@ -146,6 +150,10 @@ export class MilvusVectorDB implements VectorDB {
       { name: 'fileExtension', data_type: DataType.VarChar, max_length: 32 },
       { name: 'language', data_type: DataType.VarChar, max_length: 64 },
       { name: 'fileCategory', data_type: DataType.VarChar, max_length: 32 },
+      { name: 'symbolName', data_type: DataType.VarChar, max_length: 256 },
+      { name: 'symbolKind', data_type: DataType.VarChar, max_length: 64 },
+      { name: 'symbolSignature', data_type: DataType.VarChar, max_length: 512 },
+      { name: 'parentSymbol', data_type: DataType.VarChar, max_length: 256 },
     ];
 
     await this.client.createCollection({
@@ -201,6 +209,10 @@ export class MilvusVectorDB implements VectorDB {
         fileExtension: doc.fileExtension,
         language: doc.language,
         fileCategory: doc.fileCategory ?? 'source',
+        symbolName: doc.symbolName ?? '',
+        symbolKind: doc.symbolKind ?? '',
+        symbolSignature: doc.symbolSignature ?? '',
+        parentSymbol: doc.parentSymbol ?? '',
       }));
 
       await this.client.insert({ collection_name: name, data });
@@ -346,6 +358,34 @@ export class MilvusVectorDB implements VectorDB {
       });
     } catch (err) {
       throw new VectorDBError(`Failed to delete by path "${relativePath}" from "${name}"`, err);
+    }
+  }
+
+  async listSymbols(name: string): Promise<SymbolEntry[]> {
+    await this.ready();
+    await this.ensureLoaded(name);
+
+    try {
+      const result = await this.client.query({
+        collection_name: name,
+        filter: 'symbolName != ""',
+        output_fields: ['symbolName', 'symbolKind', 'relativePath', 'startLine', 'symbolSignature', 'parentSymbol'],
+        limit: 16384,
+      });
+
+      const rows: any[] = result.data ?? [];
+      return rows
+        .filter((r: any) => r.symbolName)
+        .map((r: any): SymbolEntry => ({
+          name: String(r.symbolName),
+          kind: String(r.symbolKind ?? ''),
+          relativePath: String(r.relativePath ?? ''),
+          startLine: Number(r.startLine ?? 0),
+          ...(r.symbolSignature ? { signature: String(r.symbolSignature) } : {}),
+          ...(r.parentSymbol ? { parentName: String(r.parentSymbol) } : {}),
+        }));
+    } catch (err) {
+      throw new VectorDBError(`Failed to list symbols from "${name}"`, err);
     }
   }
 

@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Splitter, CodeChunk } from './types.js';
+import { extractSymbolInfo, isContainerType } from './symbol-extract.js';
 
 // tree-sitter and language parsers are native CommonJS modules
 const require = createRequire(import.meta.url);
@@ -114,21 +115,42 @@ export class AstSplitter implements Splitter {
   ): CodeChunk[] {
     const chunks: CodeChunk[] = [];
 
-    const traverse = (current: typeof node) => {
+    const traverse = (current: typeof node, parentName?: string) => {
       if (splittableTypes.includes(current.type)) {
         const text = code.slice(current.startIndex, current.endIndex);
         if (text.trim().length > 0) {
-          chunks.push({
+          const symbolInfo = extractSymbolInfo(
+            current as Parameters<typeof extractSymbolInfo>[0],
+            code,
+            language,
+            parentName,
+          );
+          const chunk: CodeChunk = {
             content: text,
             startLine: current.startPosition.row + 1,
             endLine: current.endPosition.row + 1,
             language,
             filePath,
-          });
+          };
+          if (symbolInfo) {
+            chunk.symbolName = symbolInfo.name;
+            chunk.symbolKind = symbolInfo.kind;
+            chunk.symbolSignature = symbolInfo.signature;
+            if (parentName) chunk.parentSymbol = parentName;
+          }
+          chunks.push(chunk);
+
+          // If this is a container, pass its name as parentName to children
+          if (isContainerType(current.type) && symbolInfo?.name) {
+            for (const child of current.children as typeof node[]) {
+              traverse(child, symbolInfo.name);
+            }
+            return;
+          }
         }
       }
       for (const child of current.children as typeof node[]) {
-        traverse(child);
+        traverse(child, parentName);
       }
     };
 

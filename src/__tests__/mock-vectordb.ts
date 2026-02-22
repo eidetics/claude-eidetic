@@ -1,4 +1,4 @@
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult } from '../vectordb/types.js';
+import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from '../vectordb/types.js';
 
 export interface VectorDBCall {
   method: string;
@@ -120,6 +120,23 @@ export class MockVectorDB implements VectorDB {
     const col = this.collections.get(name);
     if (!col) return;
     col.documents = col.documents.filter(d => d.relativePath !== relativePath);
+  }
+
+  async listSymbols(name: string): Promise<SymbolEntry[]> {
+    this.calls.push({ method: 'listSymbols', args: [name] });
+    const col = this.collections.get(name);
+    if (!col) return [];
+
+    return col.documents
+      .filter(d => d.symbolName)
+      .map(d => ({
+        name: d.symbolName!,
+        kind: d.symbolKind ?? '',
+        relativePath: d.relativePath,
+        startLine: d.startLine,
+        ...(d.symbolSignature ? { signature: d.symbolSignature } : {}),
+        ...(d.parentSymbol ? { parentName: d.parentSymbol } : {}),
+      }));
   }
 
   /** Reset all state for test isolation */

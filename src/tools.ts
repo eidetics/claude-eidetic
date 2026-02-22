@@ -5,6 +5,7 @@ import { getConfig } from './config.js';
 import { searchCode, formatSearchResults, formatCompactResults } from './core/searcher.js';
 import { indexDocument } from './core/doc-indexer.js';
 import { searchDocuments } from './core/doc-searcher.js';
+import { generateRepoMap, listSymbolsTable, VectorDBSymbolSource } from './core/repo-map.js';
 import { StateManager } from './state/snapshot.js';
 import { registerProject, resolveProject, listProjects } from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
@@ -320,6 +321,42 @@ export class ToolHandlers {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return textResult(`Error retrieving memory history: ${message}`);
+    }
+  }
+
+  async handleBrowseStructure(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    const normalizedPath = resolvePath(args);
+    if (!normalizedPath) return noPathError();
+
+    const pathFilter = args.pathFilter as string | undefined;
+    const kindFilter = args.kindFilter as string | undefined;
+    const maxTokens = args.maxTokens as number | undefined;
+
+    try {
+      const source = new VectorDBSymbolSource(this.vectordb);
+      const map = await generateRepoMap(normalizedPath, source, { pathFilter, kindFilter, maxTokens });
+      return textResult(map);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error: ${message}`);
+    }
+  }
+
+  async handleListSymbols(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    const normalizedPath = resolvePath(args);
+    if (!normalizedPath) return noPathError();
+
+    const pathFilter = args.pathFilter as string | undefined;
+    const kindFilter = args.kind as string | undefined;
+    const nameFilter = args.nameFilter as string | undefined;
+
+    try {
+      const source = new VectorDBSymbolSource(this.vectordb);
+      const table = await listSymbolsTable(normalizedPath, source, { pathFilter, kindFilter, nameFilter });
+      return textResult(table);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return textResult(`Error: ${message}`);
     }
   }
 }

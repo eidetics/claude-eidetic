@@ -197,6 +197,10 @@ export async function indexCodebase(
       fileExtension: path.extname(chunk.filePath),
       language: chunk.language,
       fileCategory: classifyFileCategory(chunk.filePath),
+      symbolName: chunk.symbolName,
+      symbolKind: chunk.symbolKind,
+      symbolSignature: chunk.symbolSignature,
+      parentSymbol: chunk.parentSymbol,
     }));
 
     await vectordb.insert(collectionName, documents);
