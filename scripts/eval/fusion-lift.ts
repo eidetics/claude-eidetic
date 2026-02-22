@@ -26,29 +26,7 @@ import {
   extractPayload,
 } from '../../src/vectordb/qdrant.js';
 import { loadInfra } from './_infra.js';
-
-const QUERIES = [
-  'normalizePath',
-  'pathToCollectionName',
-  'reciprocalRankFusion',
-  'rankByTermFrequency',
-  'searchCode',
-  'deduplicateResults',
-  'loadConfig',
-  'createEmbedding',
-  'QdrantVectorDB',
-  'VectorDBError',
-  'EideticError',
-  'extractPayload',
-  'function that normalizes file paths to forward slashes',
-  'error class for embedding failures',
-  'reciprocal rank fusion scoring of dense and text search results',
-  'load and validate configuration from environment variables',
-  'deduplicate overlapping search result chunks within the same file',
-  'insert documents into Qdrant vector collection in batches',
-  'convert absolute file path to safe collection name',
-  'track indexing status per codebase including progress percentage',
-];
+import { allQueryTexts } from './_queries.js';
 
 const FETCH_LIMIT = 20;
 const TOP_K = 5;
@@ -71,13 +49,14 @@ function topIds(results: { id: string | number }[], k: number): string[] {
 
 async function main() {
   const { embedding, client, collectionName } = await loadInfra();
+  const queries = allQueryTexts();
 
   console.log('🔀 fusion-lift: decomposing hybrid search pipeline\n');
-  console.log(`   Queries: ${QUERIES.length}   Top-K: ${TOP_K}   Fetch limit: ${FETCH_LIMIT}\n`);
+  console.log(`   Queries: ${queries.length}   Top-K: ${TOP_K}   Fetch limit: ${FETCH_LIMIT}\n`);
 
   const metrics: PerQueryMetrics[] = [];
 
-  for (const query of QUERIES) {
+  for (const query of queries) {
     process.stdout.write(`   ${query.slice(0, 55).padEnd(55)} `);
 
     // 1. Embed the query
