@@ -329,7 +329,7 @@ export class ToolHandlers {
     if (!normalizedPath) return noPathError();
 
     const pathFilter = args.pathFilter as string | undefined;
-    const kindFilter = args.kindFilter as string | undefined;
+    const kindFilter = args.kind as string | undefined;
     const maxTokens = args.maxTokens as number | undefined;
 
     try {

@@ -132,5 +132,22 @@ class Foo {
         expect(chunk.language).toBe('javascript');
       }
     });
+
+    it('sub-chunks preserve symbolName on each sub-chunk', () => {
+      const lines = Array.from({ length: 200 }, (_, i) => `  const x${i} = ${i};`);
+      const code = `function bigFn() {\n${lines.join('\n')}\n}`;
+      const chunks = splitter.split(code, 'javascript', 'big.js');
+
+      expect(chunks.length).toBeGreaterThan(1);
+      for (const chunk of chunks) {
+        expect(chunk.symbolName).toBe('bigFn');
+      }
+    });
+
+    it('exported function produces exactly one chunk', () => {
+      const code = `export function greet(name: string): string {\n  return \`Hello, \${name}!\`;\n}`;
+      const chunks = splitter.split(code, 'typescript', 'test.ts');
+      expect(chunks.length).toBe(1);
+    });
   });
 });

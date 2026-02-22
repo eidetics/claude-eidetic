@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TOOL_DEFINITIONS } from '../tool-schemas.js';
 import { extractSymbolInfo, isContainerType } from '../splitter/symbol-extract.js';
 import {
   generateRepoMap,
@@ -381,5 +382,16 @@ describe('VectorDBSymbolSource', () => {
     const syms = await source.getSymbols(name, { kindFilter: 'class' });
     expect(syms.every(s => s.kind === 'class')).toBe(true);
     expect(syms.length).toBeGreaterThan(0);
+  });
+});
+
+// ── tool schemas ─────────────────────────────────────────────────────────────
+
+describe('tool schemas', () => {
+  it('browse_structure uses "kind" not "kindFilter"', () => {
+    const schema = TOOL_DEFINITIONS.find(t => t.name === 'browse_structure');
+    const props = schema?.inputSchema.properties as Record<string, unknown> | undefined;
+    expect(props).toHaveProperty('kind');
+    expect(props).not.toHaveProperty('kindFilter');
   });
 });

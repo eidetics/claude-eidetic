@@ -371,7 +371,7 @@ export const TOOL_DEFINITIONS = [
           type: 'string',
           description: 'Glob pattern to filter by file path (e.g., "src/core/**", "**/*.ts").',
         },
-        kindFilter: {
+        kind: {
           type: 'string',
           description: 'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
         },
