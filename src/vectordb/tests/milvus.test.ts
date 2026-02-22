@@ -184,6 +184,7 @@ describe('MilvusVectorDB', () => {
           endLine: 3,
           fileExtension: '.ts',
           language: 'typescript',
+          fileCategory: 'source',
         }],
       });
     });

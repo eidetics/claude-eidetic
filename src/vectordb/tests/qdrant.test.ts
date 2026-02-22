@@ -85,6 +85,7 @@ describe('extractPayload', () => {
       endLine: 20,
       fileExtension: '.ts',
       language: 'typescript',
+      fileCategory: '',
     });
   });
 

@@ -10,6 +10,7 @@ import { scanFiles, buildSnapshot, diffSnapshots, extensionToLanguage } from './
 import { getConfig } from '../config.js';
 import { normalizePath, pathToCollectionName } from '../paths.js';
 import { IndexingError } from '../errors.js';
+import { classifyFileCategory } from './file-category.js';
 import { loadSnapshot, saveSnapshot } from './snapshot-io.js';
 
 export { previewCodebase, type PreviewResult } from './preview.js';
@@ -195,6 +196,7 @@ export async function indexCodebase(
       endLine: chunk.endLine,
       fileExtension: path.extname(chunk.filePath),
       language: chunk.language,
+      fileCategory: classifyFileCategory(chunk.filePath),
     }));
 
     await vectordb.insert(collectionName, documents);

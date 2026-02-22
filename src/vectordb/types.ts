@@ -9,6 +9,7 @@ export interface CodeDocument {
   endLine: number;
   fileExtension: string;
   language: string;
+  fileCategory?: string;
 }
 
 export interface HybridSearchParams {
@@ -26,6 +27,7 @@ export interface SearchResult {
   fileExtension: string;
   language: string;
   score: number;
+  fileCategory?: string;
 }
 
 export interface VectorDB {

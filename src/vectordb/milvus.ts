@@ -101,6 +101,7 @@ export class MilvusVectorDB implements VectorDB {
       { name: 'endLine', data_type: DataType.Int64 },
       { name: 'fileExtension', data_type: DataType.VarChar, max_length: 32 },
       { name: 'language', data_type: DataType.VarChar, max_length: 64 },
+      { name: 'fileCategory', data_type: DataType.VarChar, max_length: 32 },
     ];
 
     const functions = [{
@@ -144,6 +145,7 @@ export class MilvusVectorDB implements VectorDB {
       { name: 'endLine', data_type: DataType.Int64 },
       { name: 'fileExtension', data_type: DataType.VarChar, max_length: 32 },
       { name: 'language', data_type: DataType.VarChar, max_length: 64 },
+      { name: 'fileCategory', data_type: DataType.VarChar, max_length: 32 },
     ];
 
     await this.client.createCollection({
@@ -198,6 +200,7 @@ export class MilvusVectorDB implements VectorDB {
         endLine: doc.endLine,
         fileExtension: doc.fileExtension,
         language: doc.language,
+        fileCategory: doc.fileCategory ?? 'source',
       }));
 
       await this.client.insert({ collection_name: name, data });
@@ -248,7 +251,7 @@ export class MilvusVectorDB implements VectorDB {
       ],
       limit: params.limit,
       rerank: { strategy: 'rrf', params: { k: RRF_K } },
-      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language'],
+      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language', 'fileCategory'],
     };
     if (expr) searchParams.expr = expr;
 
@@ -261,7 +264,7 @@ export class MilvusVectorDB implements VectorDB {
       collection_name: name,
       data: [params.queryVector],
       limit: params.limit,
-      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language'],
+      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language', 'fileCategory'],
     };
     if (expr) searchParams.expr = expr;
 
@@ -279,6 +282,7 @@ export class MilvusVectorDB implements VectorDB {
       fileExtension: r.fileExtension ?? '',
       language: r.language ?? '',
       score: r.score ?? 0,
+      fileCategory: r.fileCategory ?? '',
     }));
   }
 

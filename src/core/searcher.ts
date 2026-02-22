@@ -31,7 +31,7 @@ export async function searchCode(
 
   const limit = Math.min(Math.max(1, options.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
   const queryVector = await embedding.embed(query);
-  const overFetchLimit = Math.min(limit * 3, MAX_LIMIT);
+  const overFetchLimit = Math.min(limit * 5, MAX_LIMIT);
 
   const results = await vectordb.search(collectionName, {
     queryVector,
@@ -40,7 +40,25 @@ export async function searchCode(
     extensionFilter: options.extensionFilter,
   });
 
-  return deduplicateResults(results, limit);
+  return deduplicateResults(applyCategoryBoost(results), limit);
+}
+
+const CATEGORY_BOOST: Record<string, number> = {
+  source: 1.0,
+  test: 0.75,
+  doc: 0.65,
+  config: 0.70,
+  generated: 0.60,
+};
+const DEFAULT_BOOST = 1.0; // legacy points without fileCategory get no penalty
+
+export function applyCategoryBoost(results: SearchResult[]): SearchResult[] {
+  return results
+    .map(r => ({
+      ...r,
+      score: r.score * (CATEGORY_BOOST[r.fileCategory ?? ''] ?? DEFAULT_BOOST),
+    }))
+    .sort((a, b) => b.score - a.score);
 }
 
 export function deduplicateResults(results: SearchResult[], limit: number): SearchResult[] {
