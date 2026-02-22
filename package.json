@@ -29,6 +29,7 @@
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "test:audit": "tsx scripts/audit/lonely-source.ts; tsx scripts/audit/mock-hygiene.ts; tsx scripts/audit/bare-hands.ts; tsx scripts/audit/timer-drift.ts",
     "test:eval": "tsx scripts/eval/recall-at-k.ts && tsx scripts/eval/fusion-lift.ts && tsx scripts/eval/ndcg.ts",
+    "test:eval:generate": "tsx scripts/eval/generate-queries.ts",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {

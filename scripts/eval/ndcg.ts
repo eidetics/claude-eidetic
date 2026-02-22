@@ -6,7 +6,7 @@
  *   ranked list shifts above it —
  *   nDCG tells all
  *
- * Computes nDCG@10 against a hand-curated set of ~15 natural-language queries.
+ * Computes nDCG@10 against the natural-language queries in ground-truth.json.
  * Each query has an expected file, a line range, and a relevance grade for
  * grading system results. Grades are human-judged, not derived from the index.
  *
@@ -16,112 +16,12 @@
  *   0 = result is in a different file (miss)
  *
  * Pass threshold: mean nDCG@10 >= 0.4 (conservative baseline).
+ * Threshold applies to hand-curated queries only; generated is informational.
  */
 
 import { searchCode } from '../../src/core/searcher.js';
 import { loadInfra } from './_infra.js';
-
-interface GroundTruth {
-  query: string;
-  expectedFile: string;  // relative path from repo root
-  expectedStartLine: number;
-  expectedEndLine: number;
-}
-
-// Hand-curated queries — line ranges are approximate sections that contain
-// the primary implementation of each concept.
-const GROUND_TRUTH: GroundTruth[] = [
-  {
-    query: 'function that normalizes file paths to forward slashes',
-    expectedFile: 'src/paths.ts',
-    expectedStartLine: 5,
-    expectedEndLine: 16,
-  },
-  {
-    query: 'convert absolute file path to safe Qdrant collection name',
-    expectedFile: 'src/paths.ts',
-    expectedStartLine: 34,
-    expectedEndLine: 42,
-  },
-  {
-    query: 'reciprocal rank fusion scoring of dense and text search results',
-    expectedFile: 'src/vectordb/qdrant.ts',
-    expectedStartLine: 251,
-    expectedEndLine: 297,
-  },
-  {
-    query: 'rank text match results by normalized term frequency score',
-    expectedFile: 'src/vectordb/qdrant.ts',
-    expectedStartLine: 194,
-    expectedEndLine: 226,
-  },
-  {
-    query: 'load and validate configuration from environment variables using zod',
-    expectedFile: 'src/config.ts',
-    expectedStartLine: 46,
-    expectedEndLine: 79,
-  },
-  {
-    query: 'create embedding provider instance based on config provider field',
-    expectedFile: 'src/embedding/factory.ts',
-    expectedStartLine: 5,
-    expectedEndLine: 29,
-  },
-  {
-    query: 'embed query and search using hybrid dense and keyword retrieval',
-    expectedFile: 'src/core/searcher.ts',
-    expectedStartLine: 14,
-    expectedEndLine: 44,
-  },
-  {
-    query: 'deduplicate overlapping search result chunks within the same file',
-    expectedFile: 'src/core/searcher.ts',
-    expectedStartLine: 46,
-    expectedEndLine: 68,
-  },
-  {
-    query: 'insert code documents into Qdrant vector collection in batches',
-    expectedFile: 'src/vectordb/qdrant.ts',
-    expectedStartLine: 70,
-    expectedEndLine: 96,
-  },
-  {
-    query: 'error class hierarchy for typed application errors',
-    expectedFile: 'src/errors.ts',
-    expectedStartLine: 1,
-    expectedEndLine: 14,
-  },
-  {
-    query: 'track codebase indexing status with progress percentage',
-    expectedFile: 'src/state/snapshot.ts',
-    expectedStartLine: 1,
-    expectedEndLine: 40,
-  },
-  {
-    query: 'scan files and compute SHA-256 content hash for incremental indexing',
-    expectedFile: 'src/core/sync.ts',
-    expectedStartLine: 1,
-    expectedEndLine: 50,
-  },
-  {
-    query: 'split TypeScript source code into chunks using tree-sitter AST',
-    expectedFile: 'src/splitter/ast.ts',
-    expectedStartLine: 1,
-    expectedEndLine: 60,
-  },
-  {
-    query: 'extract payload fields from Qdrant point into typed object',
-    expectedFile: 'src/vectordb/qdrant.ts',
-    expectedStartLine: 238,
-    expectedEndLine: 249,
-  },
-  {
-    query: 'check whether Qdrant collection exists by name',
-    expectedFile: 'src/vectordb/qdrant.ts',
-    expectedStartLine: 51,
-    expectedEndLine: 58,
-  },
-];
+import { loadGroundTruth, type EvalQuery } from './_queries.js';
 
 const K = 10;
 
@@ -136,10 +36,10 @@ function grade(
   relativePath: string,
   startLine: number,
   endLine: number,
-  gt: GroundTruth,
+  q: EvalQuery,
 ): number {
-  if (relativePath.replace(/\\/g, '/') !== gt.expectedFile) return 0;
-  if (rangesOverlap(startLine, endLine, gt.expectedStartLine, gt.expectedEndLine)) return 3;
+  if (relativePath.replace(/\\/g, '/') !== q.expectedFile) return 0;
+  if (rangesOverlap(startLine, endLine, q.expectedStartLine, q.expectedEndLine)) return 3;
   return 1; // right file, different section
 }
 
@@ -167,44 +67,66 @@ function idealDcgAtK(grades: number[], k: number): number {
 
 async function main() {
   const { embedding, vectordb, rootPath } = await loadInfra();
+  const gt = loadGroundTruth();
+
+  // nDCG grading uses line ranges, so restrict to natural-language queries
+  const queries = gt.queries.filter(q => q.type === 'natural');
+  const handQueries = queries.filter(q => q.source === 'hand');
+  const genQueries = queries.filter(q => q.source === 'generated');
 
   console.log('📐 ndcg: computing nDCG@10 against curated ground truth\n');
   console.log(`   Codebase: ${rootPath}`);
-  console.log(`   Queries:  ${GROUND_TRUTH.length} (hand-curated)\n`);
+  console.log(`   Queries:  ${queries.length} natural-language (${handQueries.length} hand + ${genQueries.length} generated)\n`);
 
-  let totalNdcg = 0;
-  let failed = 0;
+  const ndcgByQuery = new Map<string, number>();
 
-  for (const gt of GROUND_TRUTH) {
-    process.stdout.write(`   ${gt.query.slice(0, 60).padEnd(60)} `);
+  for (const q of queries) {
+    process.stdout.write(`   ${q.text.slice(0, 60).padEnd(60)} `);
 
-    const results = await searchCode(rootPath, gt.query, embedding, vectordb, { limit: K });
+    const results = await searchCode(rootPath, q.text, embedding, vectordb, { limit: K });
 
-    const grades = results.map(r => grade(r.relativePath.replace(/\\/g, '/'), r.startLine, r.endLine, gt));
+    const grades = results.map(r => grade(r.relativePath.replace(/\\/g, '/'), r.startLine, r.endLine, q));
 
     const dcg = dcgAtK(grades, K);
     const idcg = idealDcgAtK(grades, K);
     const ndcg = idcg > 0 ? dcg / idcg : 0;
 
-    totalNdcg += ndcg;
-    if (ndcg < 0.1) failed++;
+    ndcgByQuery.set(q.id, ndcg);
 
     const topGrade = grades[0] ?? 0;
     const symbol = topGrade === 3 ? '✓✓' : topGrade === 1 ? '✓ ' : '✗ ';
     process.stdout.write(`${symbol}  nDCG=${ndcg.toFixed(3)}  top=${results[0]?.relativePath.replace(/\\/g, '/') ?? '(none)'}\n`);
   }
 
-  const meanNdcg = totalNdcg / GROUND_TRUTH.length;
-
   console.log('\n─────────────────────────────────────────────────────────────────────────────');
   console.log('  nDCG@10 Summary\n');
-  console.log(`  Mean nDCG@10: ${meanNdcg.toFixed(3)}`);
-  console.log(`  Threshold:    0.400`);
-  console.log(`  Queries with nDCG < 0.1 (near-total miss): ${failed}/${GROUND_TRUTH.length}`);
-  console.log();
 
-  const passed = meanNdcg >= 0.4;
-  console.log(`  ${passed ? '✅' : '❌'}  ${passed ? 'PASS' : 'FAIL'} — mean nDCG@10 = ${meanNdcg.toFixed(3)} (threshold 0.400)\n`);
+  function summarize(label: string, subset: EvalQuery[]): number | undefined {
+    if (subset.length === 0) return undefined;
+    const total = subset.length;
+    const totalNdcg = subset.reduce((s, q) => s + (ndcgByQuery.get(q.id) ?? 0), 0);
+    const mean = totalNdcg / total;
+    const failed = subset.filter(q => (ndcgByQuery.get(q.id) ?? 0) < 0.1).length;
+    console.log(`  ${label} (${total}):`);
+    console.log(`    Mean nDCG@10: ${mean.toFixed(3)}`);
+    console.log(`    Queries with nDCG < 0.1 (near-total miss): ${failed}/${total}`);
+    console.log();
+    return mean;
+  }
+
+  const handMean = summarize('✋ Hand-curated', handQueries);
+  summarize('🤖 Generated (informational)', genQueries);
+
+  if (queries.length !== handQueries.length) {
+    const allTotal = queries.length;
+    const allMean = [...ndcgByQuery.values()].reduce((s, v) => s + v, 0) / allTotal;
+    console.log(`  📊 Overall mean nDCG@10: ${allMean.toFixed(3)}\n`);
+  }
+
+  const threshold = 0.4;
+  const mean = handMean ?? 0;
+  const passed = mean >= threshold;
+  console.log(`  ${passed ? '✅' : '❌'}  ${passed ? 'PASS' : 'FAIL'} — hand-curated mean nDCG@10 = ${mean.toFixed(3)} (threshold ${threshold.toFixed(3)})\n`);
   process.exit(passed ? 0 : 1);
 }
 
