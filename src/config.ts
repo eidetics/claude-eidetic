@@ -25,10 +25,11 @@ const configSchema = z.object({
     (val) => typeof val === 'string' ? JSON.parse(val) : val,
     z.array(z.string()).default([]),
   ),
-  memoryLlmProvider: z.enum(['openai', 'ollama']).default('openai'),
+  memoryLlmProvider: z.enum(['openai', 'ollama', 'anthropic']).default('anthropic'),
   memoryLlmModel: z.string().optional(),
   memoryLlmBaseUrl: z.string().optional(),
   memoryLlmApiKey: z.string().optional(),
+  anthropicApiKey: z.string().default(''),
 }).transform((cfg) => ({
   ...cfg,
   // Default embedding model depends on provider
@@ -36,7 +37,9 @@ const configSchema = z.object({
     ?? (cfg.embeddingProvider === 'ollama' ? 'nomic-embed-text' : 'text-embedding-3-small'),
   // Default memory LLM model depends on provider
   memoryLlmModel: cfg.memoryLlmModel
-    ?? (cfg.memoryLlmProvider === 'ollama' ? 'llama3.2' : 'gpt-4o-mini'),
+    ?? (cfg.memoryLlmProvider === 'ollama' ? 'llama3.2'
+      : cfg.memoryLlmProvider === 'anthropic' ? 'claude-haiku-4-5-20251001'
+      : 'gpt-4o-mini'),
 }));
 
 export type Config = z.infer<typeof configSchema>;
@@ -64,6 +67,7 @@ export function loadConfig(): Config {
     memoryLlmModel: process.env.MEMORY_LLM_MODEL || undefined,
     memoryLlmBaseUrl: process.env.MEMORY_LLM_BASE_URL || undefined,
     memoryLlmApiKey: process.env.MEMORY_LLM_API_KEY?.trim().replace(/^["']|["']$/g, '') || undefined,
+    anthropicApiKey: (process.env.ANTHROPIC_API_KEY ?? '').trim().replace(/^["']|["']$/g, ''),
   };
 
   const result = configSchema.safeParse(raw);
