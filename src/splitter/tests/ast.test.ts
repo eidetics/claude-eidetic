@@ -57,9 +57,9 @@ interface Config {
       expect(chunks.length).toBeGreaterThanOrEqual(2);
 
       // Should find function_declaration and class_declaration
-      const contents = chunks.map(c => c.content);
-      expect(contents.some(c => c.includes('greet'))).toBe(true);
-      expect(contents.some(c => c.includes('Calculator'))).toBe(true);
+      const contents = chunks.map((c) => c.content);
+      expect(contents.some((c) => c.includes('greet'))).toBe(true);
+      expect(contents.some((c) => c.includes('Calculator'))).toBe(true);
     });
 
     it('preserves metadata', () => {
@@ -85,9 +85,9 @@ class Calculator:
 
       const chunks = splitter.split(code, 'python', 'test.py');
       expect(chunks.length).toBeGreaterThanOrEqual(2);
-      const contents = chunks.map(c => c.content);
-      expect(contents.some(c => c.includes('greet'))).toBe(true);
-      expect(contents.some(c => c.includes('Calculator'))).toBe(true);
+      const contents = chunks.map((c) => c.content);
+      expect(contents.some((c) => c.includes('greet'))).toBe(true);
+      expect(contents.some((c) => c.includes('Calculator'))).toBe(true);
     });
   });
 

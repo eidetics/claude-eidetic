@@ -26,7 +26,7 @@ export interface OpenAIEmbeddingOptions {
 export class OpenAIEmbedding implements Embedding {
   private client: OpenAI;
   private model: string;
-  private _dimension: number = 0;
+  private _dimension = 0;
   private initialized = false;
   private memoryCache = new Map<string, EmbeddingVector>();
   private cacheDir: string;
@@ -60,7 +60,7 @@ export class OpenAIEmbedding implements Embedding {
     } catch (err) {
       throw new EmbeddingError(
         `Failed to initialize embedding provider. Check your API key, base URL, and model name. ` +
-        `Model: "${this.model}"`,
+          `Model: "${this.model}"`,
         err,
       );
     }
@@ -146,7 +146,7 @@ export class OpenAIEmbedding implements Embedding {
       results[idx] = vec;
     }
 
-    if (results.some(r => r === null)) {
+    if (results.some((r) => r === null)) {
       throw new EmbeddingError(
         'Missing embeddings: some texts did not receive vectors after cache lookup and API call.',
       );
@@ -163,7 +163,7 @@ export class OpenAIEmbedding implements Embedding {
     const COST_PER_MILLION: Record<string, number> = {
       'text-embedding-3-small': 0.02,
       'text-embedding-3-large': 0.13,
-      'text-embedding-ada-002': 0.10,
+      'text-embedding-ada-002': 0.1,
     };
     const rate = COST_PER_MILLION[this.model] ?? 0;
     const estimatedCostUsd = (estimatedTokens / 1_000_000) * rate;
@@ -208,7 +208,9 @@ export class OpenAIEmbedding implements Embedding {
         let delay = RETRY_DELAYS[attempt];
 
         if (status === 429) {
-          const retryAfter = (err as { headers?: { 'retry-after'?: string } }).headers?.['retry-after'];
+          const retryAfter = (err as { headers?: { 'retry-after'?: string } }).headers?.[
+            'retry-after'
+          ];
           if (retryAfter) {
             const parsed = parseInt(retryAfter, 10);
             if (!isNaN(parsed)) delay = Math.min(parsed * 1000, MAX_RETRY_AFTER_MS);
@@ -234,13 +236,18 @@ export class OpenAIEmbedding implements Embedding {
     });
 
     const sorted = response.data.sort((a, b) => a.index - b.index);
-    return sorted.map(d => d.embedding);
+    return sorted.map((d) => d.embedding);
   }
 
   private getDiskCachePath(hash: string): string {
     // Shard into subdirectories to avoid too many files in one dir
     const shard = hash.slice(0, 2);
-    return path.join(this.cacheDir, this.model.replace(/[^a-zA-Z0-9-]/g, '_'), shard, `${hash}.json`);
+    return path.join(
+      this.cacheDir,
+      this.model.replace(/[^a-zA-Z0-9-]/g, '_'),
+      shard,
+      `${hash}.json`,
+    );
   }
 
   private async readDiskCache(hash: string): Promise<EmbeddingVector | null> {
@@ -264,12 +271,13 @@ export class OpenAIEmbedding implements Embedding {
   private writeDiskCache(hash: string, vector: EmbeddingVector): void {
     const filepath = this.getDiskCachePath(hash);
     // Fire-and-forget async write
-    fsp.mkdir(path.dirname(filepath), { recursive: true })
+    fsp
+      .mkdir(path.dirname(filepath), { recursive: true })
       .then(() => fsp.writeFile(filepath, JSON.stringify(vector)))
       .catch(() => {});
   }
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

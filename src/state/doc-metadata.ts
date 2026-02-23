@@ -12,9 +12,7 @@ export interface DocEntry {
   totalChunks: number;
 }
 
-export interface DocMetadata {
-  [key: string]: DocEntry;
-}
+export type DocMetadata = Record<string, DocEntry>;
 
 function metadataKey(library: string, topic: string): string {
   return `${library.toLowerCase()}::${topic.toLowerCase()}`;
@@ -48,7 +46,7 @@ export function removeDocEntry(library: string, topic: string): boolean {
   const metadata = loadDocMetadata();
   const key = metadataKey(library, topic);
   if (!(key in metadata)) return false;
-  delete metadata[key];
+  Reflect.deleteProperty(metadata, key);
   saveDocMetadata(metadata);
   return true;
 }

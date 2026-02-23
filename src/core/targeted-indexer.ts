@@ -64,33 +64,35 @@ export async function indexFiles(
   for (let i = 0; i < relativePaths.length; i += concurrency) {
     const batch = relativePaths.slice(i, i + concurrency);
     const batchResults = await Promise.all(
-      batch.map(async (relPath): Promise<{ relPath: string; chunks: CodeChunk[]; deleted: boolean }> => {
-        // Always remove stale vectors first
-        await vectordb.deleteByPath(collectionName, relPath);
+      batch.map(
+        async (relPath): Promise<{ relPath: string; chunks: CodeChunk[]; deleted: boolean }> => {
+          // Always remove stale vectors first
+          await vectordb.deleteByPath(collectionName, relPath);
 
-        const fullPath = path.join(normalizedRoot, relPath);
-        let code: string;
-        try {
-          code = fs.readFileSync(fullPath, 'utf-8');
-        } catch (err) {
-          if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-            // File was deleted — vectors removed, skip re-embedding
-            return { relPath, chunks: [], deleted: true };
+          const fullPath = path.join(normalizedRoot, relPath);
+          let code: string;
+          try {
+            code = fs.readFileSync(fullPath, 'utf-8');
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+              // File was deleted — vectors removed, skip re-embedding
+              return { relPath, chunks: [], deleted: true };
+            }
+            throw err;
           }
-          throw err;
-        }
 
-        if (code.trim().length === 0) return { relPath, chunks: [], deleted: false };
+          if (code.trim().length === 0) return { relPath, chunks: [], deleted: false };
 
-        const ext = path.extname(relPath);
-        const language = extensionToLanguage(ext);
+          const ext = path.extname(relPath);
+          const language = extensionToLanguage(ext);
 
-        let chunks = astSplitter.split(code, language, relPath);
-        if (chunks.length === 0) {
-          chunks = lineSplitter.split(code, language, relPath);
-        }
-        return { relPath, chunks, deleted: false };
-      }),
+          let chunks = astSplitter.split(code, language, relPath);
+          if (chunks.length === 0) {
+            chunks = lineSplitter.split(code, language, relPath);
+          }
+          return { relPath, chunks, deleted: false };
+        },
+      ),
     );
 
     for (const { relPath, chunks, deleted } of batchResults) {
@@ -110,7 +112,7 @@ export async function indexFiles(
 
   for (let i = 0; i < allChunks.length; i += batchSize) {
     const batch = allChunks.slice(i, i + batchSize);
-    const texts = batch.map(c => c.content);
+    const texts = batch.map((c) => c.content);
     const vectors = await embedding.embedBatch(texts);
 
     const documents: CodeDocument[] = batch.map((chunk, j) => ({
@@ -143,7 +145,7 @@ export async function indexFiles(
       }
     }
     for (const relPath of deletedPaths) {
-      delete snapshot[relPath];
+      Reflect.deleteProperty(snapshot, relPath);
     }
     saveSnapshot(normalizedRoot, snapshot);
   }

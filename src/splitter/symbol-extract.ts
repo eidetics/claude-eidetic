@@ -4,19 +4,15 @@ export interface SymbolInfo {
   signature: string;
 }
 
-type AstNode = {
+interface AstNode {
   type: string;
   startIndex: number;
   endIndex: number;
   children: AstNode[];
   text?: string;
-};
+}
 
-const CONTAINER_TYPES = new Set([
-  'class_declaration',
-  'class_definition',
-  'interface_declaration',
-]);
+const CONTAINER_TYPES = new Set(['class_declaration', 'class_definition', 'interface_declaration']);
 
 const KIND_MAP: Record<string, string> = {
   function_declaration: 'function',
@@ -43,8 +39,8 @@ const KIND_MAP: Record<string, string> = {
 };
 
 function getIdentifier(node: AstNode, code: string): string | undefined {
-  const identChild = node.children.find(c =>
-    c.type === 'identifier' || c.type === 'type_identifier' || c.type === 'name',
+  const identChild = node.children.find(
+    (c) => c.type === 'identifier' || c.type === 'type_identifier' || c.type === 'name',
   );
   if (identChild) return code.slice(identChild.startIndex, identChild.endIndex);
   return undefined;
@@ -68,8 +64,9 @@ export function extractSymbolInfo(
 
   // Handle export_statement: recurse into declaration child
   if (nodeType === 'export_statement') {
-    const declChild = node.children.find(c =>
-      c.type !== 'export' && c.type !== 'default' && c.type !== ';' && c.type !== 'identifier',
+    const declChild = node.children.find(
+      (c) =>
+        c.type !== 'export' && c.type !== 'default' && c.type !== ';' && c.type !== 'identifier',
     );
     if (declChild) return extractSymbolInfo(declChild, code, parentName);
     return undefined;

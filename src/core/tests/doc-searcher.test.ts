@@ -55,8 +55,22 @@ It caches the result and re-evaluates when dependencies change.`;
     vectordb = new MockVectorDB();
 
     // Pre-index some docs
-    await indexDocument(reactContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
-    await indexDocument(vueContent, 'https://vuejs.org/api', 'vue', 'composition', embedding, vectordb);
+    await indexDocument(
+      reactContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
+    await indexDocument(
+      vueContent,
+      'https://vuejs.org/api',
+      'vue',
+      'composition',
+      embedding,
+      vectordb,
+    );
   });
 
   afterEach(() => {
@@ -64,9 +78,11 @@ It caches the result and re-evaluates when dependencies change.`;
   });
 
   it('searches within a specific library', async () => {
-    const results = await searchDocuments('useState hook', embedding, vectordb, { library: 'react' });
+    const results = await searchDocuments('useState hook', embedding, vectordb, {
+      library: 'react',
+    });
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every(r => r.library === 'react')).toBe(true);
+    expect(results.every((r) => r.library === 'react')).toBe(true);
   });
 
   it('searches across all cached docs when no library specified', async () => {
@@ -75,7 +91,10 @@ It caches the result and re-evaluates when dependencies change.`;
   });
 
   it('respects limit parameter', async () => {
-    const results = await searchDocuments('hook', embedding, vectordb, { library: 'react', limit: 1 });
+    const results = await searchDocuments('hook', embedding, vectordb, {
+      library: 'react',
+      limit: 1,
+    });
     expect(results.length).toBeLessThanOrEqual(1);
   });
 
@@ -106,14 +125,12 @@ It caches the result and re-evaluates when dependencies change.`;
     const metadataPath = path.join(tmpDir, 'doc-metadata.json');
     fs.writeFileSync(metadataPath, '{}', 'utf-8');
 
-    await expect(
-      searchDocuments('query', embedding, vectordb),
-    ).rejects.toThrow('No cached documentation');
+    await expect(searchDocuments('query', embedding, vectordb)).rejects.toThrow(
+      'No cached documentation',
+    );
   });
 
   it('throws on empty query', async () => {
-    await expect(
-      searchDocuments('', embedding, vectordb),
-    ).rejects.toThrow('query is required');
+    await expect(searchDocuments('', embedding, vectordb)).rejects.toThrow('query is required');
   });
 });

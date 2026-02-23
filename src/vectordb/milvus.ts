@@ -1,4 +1,10 @@
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from './types.js';
+import type {
+  VectorDB,
+  CodeDocument,
+  HybridSearchParams,
+  SearchResult,
+  SymbolEntry,
+} from './types.js';
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
 import { RRF_K } from './qdrant.js';
@@ -18,9 +24,7 @@ async function loadMilvusSDK() {
     FunctionType = sdk.FunctionType;
     LoadState = sdk.LoadState;
   } catch {
-    throw new VectorDBError(
-      'Milvus SDK not installed. Run: npm install @zilliz/milvus2-sdk-node',
-    );
+    throw new VectorDBError('Milvus SDK not installed. Run: npm install @zilliz/milvus2-sdk-node');
   }
 }
 
@@ -30,7 +34,7 @@ async function loadMilvusSDK() {
  */
 export function isSparseUnsupportedError(err: unknown): boolean {
   const msg = String(err && typeof err === 'object' && 'reason' in err ? (err as any).reason : err);
-  return /data type[:\s]*104/i.test(msg) || /not supported/i.test(msg) && /104/.test(msg);
+  return /data type[:\s]*104/i.test(msg) || (/not supported/i.test(msg) && msg.includes('104'));
 }
 
 export class MilvusVectorDB implements VectorDB {
@@ -73,9 +77,13 @@ export class MilvusVectorDB implements VectorDB {
       if (isSparseUnsupportedError(err)) {
         console.warn(
           `Milvus does not support SparseFloatVector (requires >= v2.4). ` +
-          `Falling back to dense-only collection for "${name}".`,
+            `Falling back to dense-only collection for "${name}".`,
         );
-        try { await this.client.dropCollection({ collection_name: name }); } catch (cleanupErr) { console.warn(`Failed to clean up collection "${name}": ${cleanupErr}`); }
+        try {
+          await this.client.dropCollection({ collection_name: name });
+        } catch (cleanupErr) {
+          console.warn(`Failed to clean up collection "${name}":`, cleanupErr);
+        }
       } else {
         throw new VectorDBError(`Failed to create Milvus collection "${name}"`, err);
       }
@@ -107,13 +115,15 @@ export class MilvusVectorDB implements VectorDB {
       { name: 'parentSymbol', data_type: DataType.VarChar, max_length: 256 },
     ];
 
-    const functions = [{
-      name: 'content_bm25',
-      type: FunctionType.BM25,
-      input_field_names: ['content'],
-      output_field_names: ['sparse_vector'],
-      params: {},
-    }];
+    const functions = [
+      {
+        name: 'content_bm25',
+        type: FunctionType.BM25,
+        input_field_names: ['content'],
+        output_field_names: ['sparse_vector'],
+        params: {},
+      },
+    ];
 
     await this.client.createCollection({
       collection_name: name,
@@ -198,7 +208,7 @@ export class MilvusVectorDB implements VectorDB {
     await this.ensureLoaded(name);
 
     try {
-      const data = documents.map(doc => ({
+      const data = documents.map((doc) => ({
         id: doc.id,
         content: doc.content,
         vector: doc.vector,
@@ -229,7 +239,9 @@ export class MilvusVectorDB implements VectorDB {
     try {
       let expr: string | undefined;
       if (params.extensionFilter?.length) {
-        const exts = params.extensionFilter.map(e => `"${e.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(', ');
+        const exts = params.extensionFilter
+          .map((e) => `"${e.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`)
+          .join(', ');
         expr = `fileExtension in [${exts}]`;
       }
 
@@ -242,7 +254,11 @@ export class MilvusVectorDB implements VectorDB {
     }
   }
 
-  private async hybridSearch(name: string, params: HybridSearchParams, expr?: string): Promise<SearchResult[]> {
+  private async hybridSearch(
+    name: string,
+    params: HybridSearchParams,
+    expr?: string,
+  ): Promise<SearchResult[]> {
     const limit = params.limit * 2;
     const searchParams: any = {
       collection_name: name,
@@ -262,7 +278,16 @@ export class MilvusVectorDB implements VectorDB {
       ],
       limit: params.limit,
       rerank: { strategy: 'rrf', params: { k: RRF_K } },
-      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language', 'fileCategory'],
+      output_fields: [
+        'id',
+        'content',
+        'relativePath',
+        'startLine',
+        'endLine',
+        'fileExtension',
+        'language',
+        'fileCategory',
+      ],
     };
     if (expr) searchParams.expr = expr;
 
@@ -270,12 +295,25 @@ export class MilvusVectorDB implements VectorDB {
     return this.mapResults(result);
   }
 
-  private async denseOnlySearch(name: string, params: HybridSearchParams, expr?: string): Promise<SearchResult[]> {
+  private async denseOnlySearch(
+    name: string,
+    params: HybridSearchParams,
+    expr?: string,
+  ): Promise<SearchResult[]> {
     const searchParams: any = {
       collection_name: name,
       data: [params.queryVector],
       limit: params.limit,
-      output_fields: ['id', 'content', 'relativePath', 'startLine', 'endLine', 'fileExtension', 'language', 'fileCategory'],
+      output_fields: [
+        'id',
+        'content',
+        'relativePath',
+        'startLine',
+        'endLine',
+        'fileExtension',
+        'language',
+        'fileCategory',
+      ],
     };
     if (expr) searchParams.expr = expr;
 
@@ -313,7 +351,10 @@ export class MilvusVectorDB implements VectorDB {
     }
   }
 
-  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+  async getById(
+    name: string,
+    id: string,
+  ): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
     await this.ready();
     try {
       const result = await this.client.get({
@@ -332,7 +373,12 @@ export class MilvusVectorDB implements VectorDB {
     }
   }
 
-  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+  async updatePoint(
+    name: string,
+    id: string,
+    vector: number[],
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     await this.ready();
     await this.ensureLoaded(name);
     try {
@@ -368,21 +414,30 @@ export class MilvusVectorDB implements VectorDB {
       const result = await this.client.query({
         collection_name: name,
         filter: 'symbolName != ""',
-        output_fields: ['symbolName', 'symbolKind', 'relativePath', 'startLine', 'symbolSignature', 'parentSymbol'],
+        output_fields: [
+          'symbolName',
+          'symbolKind',
+          'relativePath',
+          'startLine',
+          'symbolSignature',
+          'parentSymbol',
+        ],
         limit: 16384,
       });
 
       const rows: any[] = result.data ?? [];
       return rows
         .filter((r: any) => r.symbolName)
-        .map((r: any): SymbolEntry => ({
-          name: String(r.symbolName),
-          kind: String(r.symbolKind ?? ''),
-          relativePath: String(r.relativePath ?? ''),
-          startLine: Number(r.startLine ?? 0),
-          ...(r.symbolSignature ? { signature: String(r.symbolSignature) } : {}),
-          ...(r.parentSymbol ? { parentName: String(r.parentSymbol) } : {}),
-        }));
+        .map(
+          (r: any): SymbolEntry => ({
+            name: String(r.symbolName),
+            kind: String(r.symbolKind ?? ''),
+            relativePath: String(r.relativePath ?? ''),
+            startLine: Number(r.startLine ?? 0),
+            ...(r.symbolSignature ? { signature: String(r.symbolSignature) } : {}),
+            ...(r.parentSymbol ? { parentName: String(r.parentSymbol) } : {}),
+          }),
+        );
     } catch (err) {
       throw new VectorDBError(`Failed to list symbols from "${name}"`, err);
     }
@@ -395,7 +450,7 @@ export class MilvusVectorDB implements VectorDB {
         await this.client.loadCollection({ collection_name: name });
       }
     } catch (err) {
-      console.warn(`Failed to ensure collection "${name}" is loaded: ${err}`);
+      console.warn(`Failed to ensure collection "${name}" is loaded:`, err);
     }
   }
 
@@ -406,8 +461,10 @@ export class MilvusVectorDB implements VectorDB {
       try {
         const result = await this.client.getLoadState({ collection_name: name });
         if (result.state === LoadState.LoadStateLoaded) return;
-      } catch (err) { console.warn(`Load state check failed for "${name}": ${err}`); }
-      await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        console.warn(`Load state check failed for "${name}":`, err);
+      }
+      await new Promise((r) => setTimeout(r, 500));
     }
     throw new VectorDBError(`Collection "${name}" failed to load within ${timeoutMs}ms`);
   }

@@ -63,7 +63,9 @@ describe('previewCodebase', () => {
 
     const result = await previewCodebase(tmpDir);
     expect(result.totalFiles).toBe(0);
-    expect(result.warnings).toContain('No indexable files found. Check file extension filters and ignore patterns.');
+    expect(result.warnings).toContain(
+      'No indexable files found. Check file extension filters and ignore patterns.',
+    );
   });
 
   it('warns when dominant directory exceeds 50%', async () => {
@@ -77,7 +79,7 @@ describe('previewCodebase', () => {
     });
 
     const result = await previewCodebase(tmpDir);
-    const domWarning = result.warnings.find(w => w.includes('generated'));
+    const domWarning = result.warnings.find((w) => w.includes('generated'));
     expect(domWarning).toBeDefined();
     expect(domWarning).toContain('80%');
   });

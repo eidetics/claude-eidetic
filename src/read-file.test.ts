@@ -59,7 +59,12 @@ describe('handleReadFile', () => {
   });
 
   it('returns line numbers when lineNumbers=true', async () => {
-    const result = await handleReadFile({ path: sampleFile, offset: 1, limit: 3, lineNumbers: true });
+    const result = await handleReadFile({
+      path: sampleFile,
+      offset: 1,
+      limit: 3,
+      lineNumbers: true,
+    });
     const text = getText(result);
     // Should have padded line numbers
     expect(text).toMatch(/1 Line 1/);

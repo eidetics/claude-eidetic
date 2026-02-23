@@ -33,7 +33,7 @@ export async function indexCodebase(
   rootPath: string,
   embedding: Embedding,
   vectordb: VectorDB,
-  force: boolean = false,
+  force = false,
   onProgress?: (pct: number, msg: string) => void,
   customExtensions?: string[],
   customIgnorePatterns?: string[],
@@ -112,6 +112,7 @@ export async function indexCodebase(
   for (let i = 0; i < filesToProcess.length; i += concurrency) {
     const batch = filesToProcess.slice(i, i + concurrency);
     const batchResults = await Promise.all(
+      // eslint-disable-next-line @typescript-eslint/require-await
       batch.map(async (relPath): Promise<{ chunks: CodeChunk[]; failed: boolean }> => {
         const fullPath = path.join(normalizedPath, relPath);
         try {
@@ -128,7 +129,7 @@ export async function indexCodebase(
           if (chunks.length === 0) return { chunks: [], failed: true };
           return { chunks, failed: false };
         } catch (err) {
-          console.warn(`Failed to process "${relPath}": ${err}`);
+          console.warn(`Failed to process "${relPath}":`, err);
           return { chunks: [], failed: true };
         }
       }),
@@ -143,7 +144,7 @@ export async function indexCodebase(
   if (parseFailures.length > 0) {
     console.warn(
       `Warning: ${parseFailures.length} file(s) produced no chunks: ${parseFailures.slice(0, 10).join(', ')}` +
-      (parseFailures.length > 10 ? ` (and ${parseFailures.length - 10} more)` : ''),
+        (parseFailures.length > 10 ? ` (and ${parseFailures.length - 10} more)` : ''),
     );
   }
 
@@ -163,11 +164,11 @@ export async function indexCodebase(
     };
   }
 
-  const chunkTexts = allChunks.map(c => c.content);
+  const chunkTexts = allChunks.map((c) => c.content);
   const estimation = embedding.estimateTokens(chunkTexts);
   console.log(
     `Indexing ${filesToProcess.length} files -> ${allChunks.length} chunks -> ` +
-    `~${(estimation.estimatedTokens / 1000).toFixed(0)}K tokens (~$${estimation.estimatedCostUsd.toFixed(4)})`,
+      `~${(estimation.estimatedTokens / 1000).toFixed(0)}K tokens (~$${estimation.estimatedCostUsd.toFixed(4)})`,
   );
 
   const batchSize = config.embeddingBatchSize;
@@ -175,10 +176,13 @@ export async function indexCodebase(
 
   for (let i = 0; i < allChunks.length; i += batchSize) {
     const batch = allChunks.slice(i, i + batchSize);
-    const texts = batch.map(c => c.content);
+    const texts = batch.map((c) => c.content);
 
     const pct = 10 + Math.round((i / allChunks.length) * 85);
-    onProgress?.(pct, `Embedding batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allChunks.length / batchSize)}...`);
+    onProgress?.(
+      pct,
+      `Embedding batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allChunks.length / batchSize)}...`,
+    );
 
     const vectors = await embedding.embedBatch(texts);
     if (vectors.length !== texts.length) {

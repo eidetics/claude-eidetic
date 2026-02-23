@@ -27,7 +27,7 @@ async function main(): Promise<void> {
   try {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
   } catch (err) {
-    process.stderr.write(`[targeted-runner] Failed to read manifest: ${err}\n`);
+    process.stderr.write(`[targeted-runner] Failed to read manifest: ${String(err)}\n`);
     process.exit(1);
   }
 
@@ -63,13 +63,13 @@ async function main(): Promise<void> {
 
     process.stderr.write(
       `[targeted-runner] Re-indexed ${result.processedFiles} files ` +
-      `(${result.totalChunks} chunks, ${result.skippedFiles} deleted) ` +
-      `in ${result.durationMs}ms\n`,
+        `(${result.totalChunks} chunks, ${result.skippedFiles} deleted) ` +
+        `in ${result.durationMs}ms\n`,
     );
   } catch (err) {
-    process.stderr.write(`[targeted-runner] Failed: ${err}\n`);
+    process.stderr.write(`[targeted-runner] Failed: ${String(err)}\n`);
     process.exit(1);
   }
 }
 
-main();
+void main();

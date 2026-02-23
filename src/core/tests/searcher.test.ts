@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { deduplicateResults, formatSearchResults, formatCompactResults, applyCategoryBoost } from '../searcher.js';
+import {
+  deduplicateResults,
+  formatSearchResults,
+  formatCompactResults,
+  applyCategoryBoost,
+} from '../searcher.js';
 import type { SearchResult } from '../../vectordb/types.js';
 
 function makeResult(overrides: Partial<SearchResult> = {}): SearchResult {
@@ -42,8 +47,8 @@ describe('applyCategoryBoost', () => {
 
   it('sorts results by boosted score descending', () => {
     const results = [
-      makeResult({ relativePath: 'a.test.ts', score: 0.9, fileCategory: 'test' }),   // 0.9 * 0.75 = 0.675
-      makeResult({ relativePath: 'b.ts', score: 0.7, fileCategory: 'source' }),       // 0.7 * 1.0 = 0.7
+      makeResult({ relativePath: 'a.test.ts', score: 0.9, fileCategory: 'test' }), // 0.9 * 0.75 = 0.675
+      makeResult({ relativePath: 'b.ts', score: 0.7, fileCategory: 'source' }), // 0.7 * 1.0 = 0.7
     ];
     const boosted = applyCategoryBoost(results);
     expect(boosted[0].relativePath).toBe('b.ts');

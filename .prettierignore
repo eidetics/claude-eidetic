@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+.worktrees
+mem0
+*.yaml

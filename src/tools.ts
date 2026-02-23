@@ -13,7 +13,19 @@ import { StateManager } from './state/snapshot.js';
 import { registerProject, resolveProject, listProjects } from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
 import type { VectorDB } from './vectordb/types.js';
-import { textResult, formatCleanupResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults, formatMemoryActions, formatMemorySearchResults, formatMemoryList, formatMemoryHistory } from './format.js';
+import {
+  textResult,
+  formatCleanupResult,
+  formatPreview,
+  formatIndexResult,
+  formatListIndexed,
+  formatDocIndexResult,
+  formatDocSearchResults,
+  formatMemoryActions,
+  formatMemorySearchResults,
+  formatMemoryList,
+  formatMemoryHistory,
+} from './format.js';
 import type { MemoryStore } from './memory/store.js';
 
 function getErrorMessage(err: unknown): string {
@@ -34,10 +46,12 @@ function noPathError(): { content: { type: string; text: string }[] } {
   const projects = listProjects();
   const names = Object.keys(projects);
   if (names.length > 0) {
-    const list = names.map(n => `  - ${n} → ${projects[n]}`).join('\n');
+    const list = names.map((n) => `  - ${n} → ${projects[n]}`).join('\n');
     return textResult(`Error: provide \`path\` or \`project\`. Registered projects:\n${list}`);
   }
-  return textResult('Error: provide \`path\` (absolute) or \`project\` (name). No projects registered yet — index a codebase first.');
+  return textResult(
+    'Error: provide `path` (absolute) or `project` (name). No projects registered yet — index a codebase first.',
+  );
 }
 
 const locks = new Map<string, Promise<void>>();
@@ -46,7 +60,9 @@ async function withMutex<T>(key: string, fn: () => Promise<T>): Promise<T> {
   const prev = locks.get(key) ?? Promise.resolve();
 
   let resolve!: () => void;
-  const current = new Promise<void>(r => { resolve = r; });
+  const current = new Promise<void>((r) => {
+    resolve = r;
+  });
   locks.set(key, current);
 
   await prev;
@@ -74,7 +90,9 @@ export class ToolHandlers {
     this.memoryStore = store;
   }
 
-  async handleIndexCodebase(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleIndexCodebase(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
     const force = (args.force as boolean) ?? false;
@@ -103,7 +121,9 @@ export class ToolHandlers {
           this.embedding,
           this.vectordb,
           force,
-          (pct, msg) => this.state.updateProgress(normalizedPath, pct, msg),
+          (pct, msg) => {
+            this.state.updateProgress(normalizedPath, pct, msg);
+          },
           customExt,
           customIgnore,
         );
@@ -119,27 +139,26 @@ export class ToolHandlers {
     });
   }
 
-  async handleSearchCode(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleSearchCode(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const query = args.query as string | undefined;
-    if (!query) return textResult('Error: "query" is required. Provide a natural language search query.');
+    if (!query)
+      return textResult('Error: "query" is required. Provide a natural language search query.');
 
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
     const rawLimit = args.limit as number | undefined;
-    const limit = (rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit >= 1)
-      ? rawLimit
-      : undefined;
+    const limit =
+      rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit >= 1 ? rawLimit : undefined;
     const extensionFilter = args.extensionFilter as string[] | undefined;
     const compact = args.compact !== false; // default true
 
     try {
-      const results = await searchCode(
-        normalizedPath,
-        query,
-        this.embedding,
-        this.vectordb,
-        { limit, extensionFilter },
-      );
+      const results = await searchCode(normalizedPath, query, this.embedding, this.vectordb, {
+        limit,
+        extensionFilter,
+      });
       const formatted = compact
         ? formatCompactResults(results, query, normalizedPath)
         : formatSearchResults(results, query, normalizedPath);
@@ -150,7 +169,9 @@ export class ToolHandlers {
     }
   }
 
-  async handleClearIndex(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleClearIndex(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
     const collectionName = pathToCollectionName(normalizedPath);
@@ -168,7 +189,9 @@ export class ToolHandlers {
     });
   }
 
-  async handleGetIndexingStatus(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleGetIndexingStatus(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
     const state = this.state.getState(normalizedPath);
@@ -177,7 +200,9 @@ export class ToolHandlers {
       const collectionName = pathToCollectionName(normalizedPath);
       const exists = await this.vectordb.hasCollection(collectionName);
       if (exists) {
-        return textResult(`Codebase at ${normalizedPath} is indexed (status loaded from vector DB).`);
+        return textResult(
+          `Codebase at ${normalizedPath} is indexed (status loaded from vector DB).`,
+        );
       }
       return textResult(`Codebase at ${normalizedPath} is not indexed.`);
     }
@@ -199,15 +224,20 @@ export class ToolHandlers {
     return textResult(lines.join('\n'));
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async handleListIndexed(): Promise<{ content: { type: string; text: string }[] }> {
     const states = this.state.getAllStates();
     if (states.length === 0) {
-      return textResult('No codebases are currently indexed in this session.\n\nUse `index_codebase` to index a codebase first.');
+      return textResult(
+        'No codebases are currently indexed in this session.\n\nUse `index_codebase` to index a codebase first.',
+      );
     }
     return textResult(formatListIndexed(states));
   }
 
-  async handleCleanupVectors(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleCleanupVectors(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
     const dryRun = (args.dryRun as boolean) ?? false;
@@ -220,7 +250,9 @@ export class ToolHandlers {
         if (dryRun) {
           const previousSnapshot = loadSnapshot(normalizedPath);
           if (!previousSnapshot) {
-            return textResult(`Error: No snapshot found for ${normalizedPath}. Index the codebase first before running cleanup.`);
+            return textResult(
+              `Error: No snapshot found for ${normalizedPath}. Index the codebase first before running cleanup.`,
+            );
           }
           const filePaths = await scanFiles(normalizedPath, customExt, customIgnore);
           const currentSnapshot = buildSnapshot(normalizedPath, filePaths);
@@ -244,23 +276,41 @@ export class ToolHandlers {
     });
   }
 
-  async handleIndexDocument(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleIndexDocument(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const content = args.content as string | undefined;
-    if (!content) return textResult('Error: "content" is required. Provide the documentation text to cache.');
+    if (!content)
+      return textResult('Error: "content" is required. Provide the documentation text to cache.');
 
     const source = args.source as string | undefined;
-    if (!source) return textResult('Error: "source" is required. Provide the source URL or identifier.');
+    if (!source)
+      return textResult('Error: "source" is required. Provide the source URL or identifier.');
 
     const library = args.library as string | undefined;
-    if (!library) return textResult('Error: "library" is required. Provide the library name (e.g., "react", "langfuse").');
+    if (!library)
+      return textResult(
+        'Error: "library" is required. Provide the library name (e.g., "react", "langfuse").',
+      );
 
     const topic = args.topic as string | undefined;
-    if (!topic) return textResult('Error: "topic" is required. Provide the topic within the library (e.g., "hooks").');
+    if (!topic)
+      return textResult(
+        'Error: "topic" is required. Provide the topic within the library (e.g., "hooks").',
+      );
 
     const ttlDays = (args.ttlDays as number) ?? 7;
 
     try {
-      const result = await indexDocument(content, source, library, topic, this.embedding, this.vectordb, ttlDays);
+      const result = await indexDocument(
+        content,
+        source,
+        library,
+        topic,
+        this.embedding,
+        this.vectordb,
+        ttlDays,
+      );
       return textResult(formatDocIndexResult(result));
     } catch (err) {
       const message = getErrorMessage(err);
@@ -268,18 +318,23 @@ export class ToolHandlers {
     }
   }
 
-  async handleSearchDocuments(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleSearchDocuments(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const query = args.query as string | undefined;
-    if (!query) return textResult('Error: "query" is required. Provide a natural language search query.');
+    if (!query)
+      return textResult('Error: "query" is required. Provide a natural language search query.');
 
     const library = args.library as string | undefined;
     const rawLimit = args.limit as number | undefined;
-    const limit = (rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit >= 1)
-      ? rawLimit
-      : undefined;
+    const limit =
+      rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit >= 1 ? rawLimit : undefined;
 
     try {
-      const results = await searchDocuments(query, this.embedding, this.vectordb, { library, limit });
+      const results = await searchDocuments(query, this.embedding, this.vectordb, {
+        library,
+        limit,
+      });
       return textResult(formatDocSearchResults(results, query));
     } catch (err) {
       const message = getErrorMessage(err);
@@ -287,11 +342,16 @@ export class ToolHandlers {
     }
   }
 
-  async handleAddMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleAddMemory(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
     const content = args.content as string | undefined;
-    if (!content) return textResult('Error: "content" is required. Provide text containing developer knowledge to extract.');
+    if (!content)
+      return textResult(
+        'Error: "content" is required. Provide text containing developer knowledge to extract.',
+      );
 
     const source = args.source as string | undefined;
 
@@ -304,11 +364,14 @@ export class ToolHandlers {
     }
   }
 
-  async handleSearchMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleSearchMemory(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
     const query = args.query as string | undefined;
-    if (!query) return textResult('Error: "query" is required. Provide a natural language search query.');
+    if (!query)
+      return textResult('Error: "query" is required. Provide a natural language search query.');
 
     const limit = (args.limit as number | undefined) ?? 10;
     const category = args.category as string | undefined;
@@ -322,7 +385,9 @@ export class ToolHandlers {
     }
   }
 
-  async handleListMemories(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleListMemories(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
     const category = args.category as string | undefined;
@@ -337,11 +402,14 @@ export class ToolHandlers {
     }
   }
 
-  async handleDeleteMemory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleDeleteMemory(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
     const id = args.id as string | undefined;
-    if (!id) return textResult('Error: "id" is required. Provide the UUID of the memory to delete.');
+    if (!id)
+      return textResult('Error: "id" is required. Provide the UUID of the memory to delete.');
 
     try {
       const deleted = await this.memoryStore.deleteMemory(id);
@@ -353,11 +421,17 @@ export class ToolHandlers {
     }
   }
 
-  async handleMemoryHistory(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async handleMemoryHistory(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
     const id = args.id as string | undefined;
-    if (!id) return textResult('Error: "id" is required. Provide the UUID of the memory to view history for.');
+    if (!id)
+      return textResult(
+        'Error: "id" is required. Provide the UUID of the memory to view history for.',
+      );
 
     try {
       const entries = this.memoryStore.getHistory(id);
@@ -368,7 +442,9 @@ export class ToolHandlers {
     }
   }
 
-  async handleBrowseStructure(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleBrowseStructure(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
 
@@ -378,7 +454,11 @@ export class ToolHandlers {
 
     try {
       const source = new VectorDBSymbolSource(this.vectordb);
-      const map = await generateRepoMap(normalizedPath, source, { pathFilter, kindFilter, maxTokens });
+      const map = await generateRepoMap(normalizedPath, source, {
+        pathFilter,
+        kindFilter,
+        maxTokens,
+      });
       return textResult(map);
     } catch (err) {
       const message = getErrorMessage(err);
@@ -386,7 +466,9 @@ export class ToolHandlers {
     }
   }
 
-  async handleListSymbols(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+  async handleListSymbols(
+    args: Record<string, unknown>,
+  ): Promise<{ content: { type: string; text: string }[] }> {
     const normalizedPath = resolvePath(args);
     if (!normalizedPath) return noPathError();
 
@@ -396,7 +478,11 @@ export class ToolHandlers {
 
     try {
       const source = new VectorDBSymbolSource(this.vectordb);
-      const table = await listSymbolsTable(normalizedPath, source, { pathFilter, kindFilter, nameFilter });
+      const table = await listSymbolsTable(normalizedPath, source, {
+        pathFilter,
+        kindFilter,
+        nameFilter,
+      });
       return textResult(table);
     } catch (err) {
       const message = getErrorMessage(err);
@@ -409,28 +495,38 @@ const MAX_LINES = 10_000;
 const DEFAULT_LINES = 5_000;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export async function handleReadFile(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+export async function handleReadFile(
+  args: Record<string, unknown>,
+): Promise<{ content: { type: string; text: string }[] }> {
   const rawPath = args.path as string | undefined;
   if (!rawPath) return textResult('Error: "path" is required. Provide an absolute file path.');
 
   const filePath = normalizePath(rawPath);
   const offset = Math.max(0, (args.offset as number | undefined) ?? 0);
-  const limit = Math.min(MAX_LINES, Math.max(1, (args.limit as number | undefined) ?? DEFAULT_LINES));
+  const limit = Math.min(
+    MAX_LINES,
+    Math.max(1, (args.limit as number | undefined) ?? DEFAULT_LINES),
+  );
   const lineNumbers = (args.lineNumbers as boolean | undefined) ?? false;
 
   let raw: string;
   try {
     const fileStat = await stat(filePath);
-    if (fileStat.isDirectory()) return textResult(`Error: Path is a directory, not a file: ${filePath}`);
+    if (fileStat.isDirectory())
+      return textResult(`Error: Path is a directory, not a file: ${filePath}`);
     if (fileStat.size > MAX_FILE_SIZE) {
-      return textResult(`Error: File too large (${(fileStat.size / 1024 / 1024).toFixed(1)}MB). Maximum: 10MB.`);
+      return textResult(
+        `Error: File too large (${(fileStat.size / 1024 / 1024).toFixed(1)}MB). Maximum: 10MB.`,
+      );
     }
     raw = await readFile(filePath, 'utf-8');
   } catch (err: unknown) {
     const nodeErr = err as NodeJS.ErrnoException;
     if (nodeErr.code === 'ENOENT') return textResult(`Error: File not found: ${filePath}`);
-    if (nodeErr.code === 'EACCES' || nodeErr.code === 'EPERM') return textResult(`Error: Permission denied: ${filePath}`);
-    if (nodeErr.code === 'EISDIR') return textResult(`Error: Path is a directory, not a file: ${filePath}`);
+    if (nodeErr.code === 'EACCES' || nodeErr.code === 'EPERM')
+      return textResult(`Error: Permission denied: ${filePath}`);
+    if (nodeErr.code === 'EISDIR')
+      return textResult(`Error: Path is a directory, not a file: ${filePath}`);
     const message = getErrorMessage(err);
     return textResult(`Error reading file: ${message}`);
   }

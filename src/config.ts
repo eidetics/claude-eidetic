@@ -3,44 +3,50 @@ import path from 'node:path';
 import { z } from 'zod';
 import { ConfigError } from './errors.js';
 
-const configSchema = z.object({
-  embeddingProvider: z.enum(['openai', 'ollama', 'local']).default('openai'),
-  openaiApiKey: z.string().default(''),
-  openaiBaseUrl: z.string().optional(),
-  ollamaBaseUrl: z.string().default('http://localhost:11434/v1'),
-  embeddingModel: z.string().optional(),
-  embeddingBatchSize: z.coerce.number().int().min(1).max(2048).default(100),
-  indexingConcurrency: z.coerce.number().int().min(1).max(32).default(8),
-  qdrantUrl: z.string().default('http://localhost:6333'),
-  qdrantApiKey: z.string().optional(),
-  vectordbProvider: z.enum(['qdrant', 'milvus']).default('qdrant'),
-  milvusAddress: z.string().default('localhost:19530'),
-  milvusToken: z.string().optional(),
-  eideticDataDir: z.string().default(path.join(os.homedir(), '.eidetic')),
-  customExtensions: z.preprocess(
-    (val) => typeof val === 'string' ? JSON.parse(val) : val,
-    z.array(z.string()).default([]),
-  ),
-  customIgnorePatterns: z.preprocess(
-    (val) => typeof val === 'string' ? JSON.parse(val) : val,
-    z.array(z.string()).default([]),
-  ),
-  memoryLlmProvider: z.enum(['openai', 'ollama', 'anthropic']).default('anthropic'),
-  memoryLlmModel: z.string().optional(),
-  memoryLlmBaseUrl: z.string().optional(),
-  memoryLlmApiKey: z.string().optional(),
-  anthropicApiKey: z.string().default(''),
-}).transform((cfg) => ({
-  ...cfg,
-  // Default embedding model depends on provider
-  embeddingModel: cfg.embeddingModel
-    ?? (cfg.embeddingProvider === 'ollama' ? 'nomic-embed-text' : 'text-embedding-3-small'),
-  // Default memory LLM model depends on provider
-  memoryLlmModel: cfg.memoryLlmModel
-    ?? (cfg.memoryLlmProvider === 'ollama' ? 'llama3.2'
-      : cfg.memoryLlmProvider === 'anthropic' ? 'claude-haiku-4-5-20251001'
-      : 'gpt-4o-mini'),
-}));
+const configSchema = z
+  .object({
+    embeddingProvider: z.enum(['openai', 'ollama', 'local']).default('openai'),
+    openaiApiKey: z.string().default(''),
+    openaiBaseUrl: z.string().optional(),
+    ollamaBaseUrl: z.string().default('http://localhost:11434/v1'),
+    embeddingModel: z.string().optional(),
+    embeddingBatchSize: z.coerce.number().int().min(1).max(2048).default(100),
+    indexingConcurrency: z.coerce.number().int().min(1).max(32).default(8),
+    qdrantUrl: z.string().default('http://localhost:6333'),
+    qdrantApiKey: z.string().optional(),
+    vectordbProvider: z.enum(['qdrant', 'milvus']).default('qdrant'),
+    milvusAddress: z.string().default('localhost:19530'),
+    milvusToken: z.string().optional(),
+    eideticDataDir: z.string().default(path.join(os.homedir(), '.eidetic')),
+    customExtensions: z.preprocess(
+      (val) => (typeof val === 'string' ? JSON.parse(val) : val),
+      z.array(z.string()).default([]),
+    ),
+    customIgnorePatterns: z.preprocess(
+      (val) => (typeof val === 'string' ? JSON.parse(val) : val),
+      z.array(z.string()).default([]),
+    ),
+    memoryLlmProvider: z.enum(['openai', 'ollama', 'anthropic']).default('anthropic'),
+    memoryLlmModel: z.string().optional(),
+    memoryLlmBaseUrl: z.string().optional(),
+    memoryLlmApiKey: z.string().optional(),
+    anthropicApiKey: z.string().default(''),
+  })
+  .transform((cfg) => ({
+    ...cfg,
+    // Default embedding model depends on provider
+    embeddingModel:
+      cfg.embeddingModel ??
+      (cfg.embeddingProvider === 'ollama' ? 'nomic-embed-text' : 'text-embedding-3-small'),
+    // Default memory LLM model depends on provider
+    memoryLlmModel:
+      cfg.memoryLlmModel ??
+      (cfg.memoryLlmProvider === 'ollama'
+        ? 'llama3.2'
+        : cfg.memoryLlmProvider === 'anthropic'
+          ? 'claude-haiku-4-5-20251001'
+          : 'gpt-4o-mini'),
+  }));
 
 export type Config = z.infer<typeof configSchema>;
 
@@ -66,13 +72,14 @@ export function loadConfig(): Config {
     memoryLlmProvider: process.env.MEMORY_LLM_PROVIDER,
     memoryLlmModel: process.env.MEMORY_LLM_MODEL || undefined,
     memoryLlmBaseUrl: process.env.MEMORY_LLM_BASE_URL || undefined,
-    memoryLlmApiKey: process.env.MEMORY_LLM_API_KEY?.trim().replace(/^["']|["']$/g, '') || undefined,
+    memoryLlmApiKey:
+      process.env.MEMORY_LLM_API_KEY?.trim().replace(/^["']|["']$/g, '') || undefined,
     anthropicApiKey: (process.env.ANTHROPIC_API_KEY ?? '').trim().replace(/^["']|["']$/g, ''),
   };
 
   const result = configSchema.safeParse(raw);
   if (!result.success) {
-    const issues = result.error.issues.map(i => `  ${i.path.join('.')}: ${i.message}`).join('\n');
+    const issues = result.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
     throw new ConfigError(`Invalid configuration:\n${issues}`);
   }
 

@@ -3,16 +3,15 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getConfig } from '../config.js';
 import { MemoryError } from '../errors.js';
 
-export async function chatCompletion(
-  systemPrompt: string,
-  userMessage: string,
-): Promise<string> {
+export async function chatCompletion(systemPrompt: string, userMessage: string): Promise<string> {
   const config = getConfig();
 
   if (config.memoryLlmProvider === 'anthropic') {
     const apiKey = config.memoryLlmApiKey ?? config.anthropicApiKey ?? config.openaiApiKey;
     if (!apiKey) {
-      throw new MemoryError('No API key configured for memory LLM. Set MEMORY_LLM_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY.');
+      throw new MemoryError(
+        'No API key configured for memory LLM. Set MEMORY_LLM_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY.',
+      );
     }
 
     const client = new Anthropic({ apiKey });
@@ -35,7 +34,9 @@ export async function chatCompletion(
   // OpenAI / Ollama path
   const apiKey = config.memoryLlmApiKey ?? config.openaiApiKey;
   if (!apiKey) {
-    throw new MemoryError('No API key configured for memory LLM. Set MEMORY_LLM_API_KEY or OPENAI_API_KEY.');
+    throw new MemoryError(
+      'No API key configured for memory LLM. Set MEMORY_LLM_API_KEY or OPENAI_API_KEY.',
+    );
   }
 
   let baseURL: string | undefined;

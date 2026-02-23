@@ -18,7 +18,7 @@ const INDEX_FILENAME = '.session-index.json';
 export function updateSessionIndex(
   notesDir: string,
   session: ExtractedSession,
-  noteFile: string
+  noteFile: string,
 ): void {
   const indexPath = path.join(notesDir, INDEX_FILENAME);
 

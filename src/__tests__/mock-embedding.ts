@@ -28,7 +28,7 @@ export class MockEmbedding implements Embedding {
 
   async embedBatch(texts: string[]): Promise<EmbeddingVector[]> {
     this.calls.push({ method: 'embedBatch', texts });
-    return texts.map(t => this.deterministicVector(t));
+    return texts.map((t) => this.deterministicVector(t));
   }
 
   estimateTokens(texts: string[]): TokenEstimate {
@@ -37,7 +37,7 @@ export class MockEmbedding implements Embedding {
     return {
       totalChars,
       estimatedTokens,
-      estimatedCostUsd: estimatedTokens * 0.00002 / 1000,
+      estimatedCostUsd: (estimatedTokens * 0.00002) / 1000,
     };
   }
 
@@ -49,6 +49,6 @@ export class MockEmbedding implements Embedding {
     // Normalize to unit length
     const magnitude = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
     if (magnitude === 0) return vec;
-    return vec.map(v => v / magnitude);
+    return vec.map((v) => v / magnitude);
   }
 }

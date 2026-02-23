@@ -23,7 +23,7 @@ export function createEmbedding(config: Config): Embedding {
 
     default: {
       const _exhaustive: never = config.embeddingProvider;
-      throw new Error(`Unknown embedding provider: ${_exhaustive}`);
+      throw new Error(`Unknown embedding provider: ${_exhaustive as string}`);
     }
   }
 }

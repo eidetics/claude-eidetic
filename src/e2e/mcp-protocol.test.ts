@@ -56,7 +56,7 @@ class McpTestClient {
       if (headerEnd === -1) break;
 
       const header = this.buffer.slice(0, headerEnd);
-      const match = header.match(/Content-Length:\s*(\d+)/i);
+      const match = /Content-Length:\s*(\d+)/i.exec(header);
       if (!match) {
         // Skip invalid header
         this.buffer = this.buffer.slice(headerEnd + 4);
@@ -160,7 +160,7 @@ describeIfServer('MCP protocol', () => {
     expect(resp.error).toBeUndefined();
     const tools = (resp.result as { tools: { name: string }[] }).tools;
     expect(tools).toHaveLength(9);
-    const names = tools.map(t => t.name).sort();
+    const names = tools.map((t) => t.name).sort();
     expect(names).toEqual([
       '__IMPORTANT',
       'clear_index',

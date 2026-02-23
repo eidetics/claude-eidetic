@@ -45,13 +45,15 @@ vi.mock('../snapshot-io.js', () => ({
 
 // Mock splitters: AstSplitter returns one chunk, LineSplitter is fallback
 vi.mock('../splitter/ast.js', async () => {
-  const { AstSplitter } = await vi.importActual<typeof import('../../splitter/ast.js')>('../splitter/ast.js').catch(() => ({
-    AstSplitter: class { split() { return []; } },
-  }));
+  await vi
+    .importActual<typeof import('../../splitter/ast.js')>('../splitter/ast.js')
+    .catch(() => ({}));
   return {
     AstSplitter: class {
       split(_code: string, _lang: string, filePath: string) {
-        return [{ content: 'chunk content', filePath, startLine: 1, endLine: 10, language: 'typescript' }];
+        return [
+          { content: 'chunk content', filePath, startLine: 1, endLine: 10, language: 'typescript' },
+        ];
       }
     },
   };
@@ -60,7 +62,9 @@ vi.mock('../splitter/ast.js', async () => {
 vi.mock('../splitter/line.js', () => ({
   LineSplitter: class {
     split(_code: string, _lang: string, filePath: string) {
-      return [{ content: 'line chunk', filePath, startLine: 1, endLine: 5, language: 'typescript' }];
+      return [
+        { content: 'line chunk', filePath, startLine: 1, endLine: 5, language: 'typescript' },
+      ];
     }
   },
 }));
@@ -125,8 +129,14 @@ describe('indexFiles', () => {
     await indexFiles('/project', ['src/foo.ts', 'src/bar.ts'], embedding, vectordb);
 
     expect(vectordb.deleteByPath).toHaveBeenCalledTimes(2);
-    expect(vectordb.deleteByPath).toHaveBeenCalledWith(expect.stringContaining('eidetic_'), 'src/foo.ts');
-    expect(vectordb.deleteByPath).toHaveBeenCalledWith(expect.stringContaining('eidetic_'), 'src/bar.ts');
+    expect(vectordb.deleteByPath).toHaveBeenCalledWith(
+      expect.stringContaining('eidetic_'),
+      'src/foo.ts',
+    );
+    expect(vectordb.deleteByPath).toHaveBeenCalledWith(
+      expect.stringContaining('eidetic_'),
+      'src/bar.ts',
+    );
   });
 
   it('skips re-embedding deleted files (ENOENT) but still deletes vectors', async () => {
@@ -134,7 +144,9 @@ describe('indexFiles', () => {
     const embedding = makeEmbedding();
 
     const enoent = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-    mockReadFileSync.mockImplementation(() => { throw enoent; });
+    mockReadFileSync.mockImplementation(() => {
+      throw enoent;
+    });
     mockLoadSnapshot.mockReturnValue(null);
 
     const result = await indexFiles('/project', ['src/deleted.ts'], embedding, vectordb);
@@ -185,7 +197,9 @@ describe('indexFiles', () => {
     const embedding = makeEmbedding();
 
     const enoent = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-    mockReadFileSync.mockImplementation(() => { throw enoent; });
+    mockReadFileSync.mockImplementation(() => {
+      throw enoent;
+    });
 
     const existingSnapshot = {
       'src/deleted.ts': { contentHash: 'oldhash' },

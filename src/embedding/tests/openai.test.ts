@@ -212,8 +212,8 @@ describe('OpenAIEmbedding', () => {
 
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual([0, 0, 0, 0]); // empty → zero vector
-      expect(result[1]).toEqual(cachedVec);      // memory cache hit
-      expect(result[2]).toEqual(freshVec);        // API call
+      expect(result[1]).toEqual(cachedVec); // memory cache hit
+      expect(result[2]).toEqual(freshVec); // API call
       // initialize + cache-warm + this batch = 3
       expect(mockCreate).toHaveBeenCalledTimes(3);
     });
@@ -223,7 +223,13 @@ describe('OpenAIEmbedding', () => {
       const emb = await createInitialized(2);
 
       // 5 texts → should split into batches of 3 + 2
-      const vecs = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]];
+      const vecs = [
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [5, 0],
+      ];
       mockCreate
         .mockResolvedValueOnce(fakeEmbeddingResponse(vecs.slice(0, 3)))
         .mockResolvedValueOnce(fakeEmbeddingResponse(vecs.slice(3)));
@@ -241,7 +247,7 @@ describe('OpenAIEmbedding', () => {
       await emb.embedBatch(['new-text']);
 
       // Allow fire-and-forget promises to settle
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
 
       expect(mockMkdir).toHaveBeenCalled();
       expect(mockWriteFile).toHaveBeenCalled();

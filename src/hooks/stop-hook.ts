@@ -84,15 +84,11 @@ async function main(): Promise<void> {
     const baseCommit = fs.readFileSync(baseCommitFile, 'utf-8').trim();
 
     // Write tree from shadow index
-    const treeSha = execFileSync(
-      'git',
-      ['-C', cwd, 'write-tree'],
-      {
-        env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
-        encoding: 'utf-8',
-        timeout: 10000,
-      },
-    ).trim();
+    const treeSha = execFileSync('git', ['-C', cwd, 'write-tree'], {
+      env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
+      encoding: 'utf-8',
+      timeout: 10000,
+    }).trim();
 
     // Create a commit object pointing to that tree
     const commitSha = execFileSync(
@@ -102,11 +98,9 @@ async function main(): Promise<void> {
     ).trim();
 
     // Store under refs/heads/claude/<session-id> for history
-    execFileSync(
-      'git',
-      ['-C', cwd, 'update-ref', `refs/heads/claude/${session_id}`, commitSha],
-      { timeout: 5000 },
-    );
+    execFileSync('git', ['-C', cwd, 'update-ref', `refs/heads/claude/${session_id}`, commitSha], {
+      timeout: 5000,
+    });
 
     // Find files that changed between base and new commit
     const diffOutput = execFileSync(
@@ -117,14 +111,14 @@ async function main(): Promise<void> {
 
     const modifiedFiles = diffOutput
       .split('\n')
-      .map(f => f.trim())
-      .filter(f => f.length > 0);
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
 
     // Clean up shadow index directory
     try {
       fs.rmSync(shadowDir, { recursive: true, force: true });
     } catch (err) {
-      process.stderr.write(`[eidetic:stop-hook] Failed to clean shadow index: ${err}\n`);
+      process.stderr.write(`[eidetic:stop-hook] Failed to clean shadow index: ${String(err)}\n`);
     }
 
     if (modifiedFiles.length === 0) {
@@ -153,4 +147,4 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+void main();

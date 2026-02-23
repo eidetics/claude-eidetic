@@ -13,7 +13,7 @@ import { getNotesDir, getProjectId } from './utils.js';
 
 const MAX_FILES_SHOWN = 5;
 
-async function main(): Promise<void> {
+function main(): void {
   try {
     // Get cwd from environment (set by Claude Code) or detect from git
     const cwd = process.env.CLAUDE_CWD || process.cwd();
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
     process.stdout.write(output);
   } catch (err) {
     // Write to stderr for debugging, but don't break session start
-    process.stderr.write(`Tier-0 inject failed: ${err}\n`);
+    process.stderr.write(`Tier-0 inject failed: ${String(err)}\n`);
   }
 }
 
@@ -61,12 +61,15 @@ function detectProjectRoot(cwd: string): string | null {
   }
 }
 
-function formatTier0Context(session: {
-  date: string;
-  branch: string | null;
-  filesModified: string[];
-  tasksCreated: string[];
-}, totalSessions: number): string {
+function formatTier0Context(
+  session: {
+    date: string;
+    branch: string | null;
+    filesModified: string[];
+    tasksCreated: string[];
+  },
+  totalSessions: number,
+): string {
   const lines: string[] = [];
 
   lines.push(`## Eidetic: Last session (${session.date}, branch: ${session.branch ?? 'unknown'})`);
@@ -75,7 +78,7 @@ function formatTier0Context(session: {
   if (session.filesModified.length > 0) {
     const shown = session.filesModified.slice(0, MAX_FILES_SHOWN);
     const remaining = session.filesModified.length - shown.length;
-    const fileList = shown.map(f => path.basename(f)).join(', ');
+    const fileList = shown.map((f) => path.basename(f)).join(', ');
     if (remaining > 0) {
       lines.push(`- Files modified: ${fileList} (+${remaining} more)`);
     } else {

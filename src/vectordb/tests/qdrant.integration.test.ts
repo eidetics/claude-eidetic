@@ -29,7 +29,7 @@ async function isQdrantAvailable(): Promise<boolean> {
   }
 }
 
-const describeIfQdrant = await isQdrantAvailable() ? describe : describe.skip;
+const describeIfQdrant = (await isQdrantAvailable()) ? describe : describe.skip;
 
 describeIfQdrant('QdrantVectorDB integration', () => {
   let db: QdrantVectorDB;
@@ -73,7 +73,7 @@ describeIfQdrant('QdrantVectorDB integration', () => {
       {
         id: randomUUID(),
         content: 'class Calculator { add(a, b) { return a + b; } }',
-        vector: vector.map(v => v + 0.01),
+        vector: vector.map((v) => v + 0.01),
         relativePath: 'src/calc.ts',
         startLine: 1,
         endLine: 5,
@@ -89,14 +89,14 @@ describeIfQdrant('QdrantVectorDB integration', () => {
     });
 
     expect(results.length).toBeGreaterThan(0);
-    expect(results.some(r => r.content.includes('greet'))).toBe(true);
+    expect(results.some((r) => r.content.includes('greet'))).toBe(true);
   });
 
   it('deleteByPath removes matching docs', async () => {
     await db.deleteByPath(TEST_COLLECTION, 'src/greet.ts');
 
     // Wait briefly for deletion to propagate
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
 
     const results = await db.search(TEST_COLLECTION, {
       queryVector: new Array(DIMENSION).fill(0.1),
@@ -104,22 +104,24 @@ describeIfQdrant('QdrantVectorDB integration', () => {
       limit: 10,
     });
 
-    const greetResults = results.filter(r => r.relativePath === 'src/greet.ts');
+    const greetResults = results.filter((r) => r.relativePath === 'src/greet.ts');
     expect(greetResults).toHaveLength(0);
   });
 
   it('extensionFilter works', async () => {
     // Insert a .py doc
-    await db.insert(TEST_COLLECTION, [{
-      id: randomUUID(),
-      content: 'def hello(): return "world"',
-      vector: new Array(DIMENSION).fill(0.2),
-      relativePath: 'src/hello.py',
-      startLine: 1,
-      endLine: 1,
-      fileExtension: '.py',
-      language: 'python',
-    }]);
+    await db.insert(TEST_COLLECTION, [
+      {
+        id: randomUUID(),
+        content: 'def hello(): return "world"',
+        vector: new Array(DIMENSION).fill(0.2),
+        relativePath: 'src/hello.py',
+        startLine: 1,
+        endLine: 1,
+        fileExtension: '.py',
+        language: 'python',
+      },
+    ]);
 
     const tsOnly = await db.search(TEST_COLLECTION, {
       queryVector: new Array(DIMENSION).fill(0.2),
@@ -129,7 +131,7 @@ describeIfQdrant('QdrantVectorDB integration', () => {
     });
 
     // Should not include .py results
-    expect(tsOnly.every(r => r.fileExtension === '.ts')).toBe(true);
+    expect(tsOnly.every((r) => r.fileExtension === '.ts')).toBe(true);
   });
 
   it('returns empty results for no matches', async () => {

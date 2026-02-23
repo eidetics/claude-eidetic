@@ -21,7 +21,9 @@ export async function cleanupVectors(
 
   const previousSnapshot = loadSnapshot(rootPath);
   if (!previousSnapshot) {
-    throw new IndexingError(`No snapshot found for ${rootPath}. Index the codebase first before running cleanup.`);
+    throw new IndexingError(
+      `No snapshot found for ${rootPath}. Index the codebase first before running cleanup.`,
+    );
   }
 
   onProgress?.(10, 'Scanning files on disk...');
@@ -53,7 +55,7 @@ export async function cleanupVectors(
   // Save updated snapshot (removes the deleted file entries)
   const updatedSnapshot = { ...previousSnapshot };
   for (const rel of removed) {
-    delete updatedSnapshot[rel];
+    Reflect.deleteProperty(updatedSnapshot, rel);
   }
   saveSnapshot(rootPath, updatedSnapshot);
 

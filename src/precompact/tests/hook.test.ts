@@ -31,7 +31,7 @@ describe('PreCompact hook integration', () => {
       path.join(tmpDir, 'transcript.jsonl'),
       'test-session-id',
       'testproj',
-      tmpDir
+      tmpDir,
     );
 
     expect(session.branch).toBe('main');
@@ -70,7 +70,7 @@ describe('PreCompact hook integration', () => {
       path.join(tmpDir, 'transcript.jsonl'),
       'empty-session',
       'proj',
-      tmpDir
+      tmpDir,
     );
 
     expect(session.filesModified).toEqual([]);
@@ -87,7 +87,8 @@ describe('PreCompact hook integration', () => {
 
   it('preserves multiple sessions in index', async () => {
     tmpDir = createTempCodebase({
-      'transcript.jsonl': '{"type":"user","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
+      'transcript.jsonl':
+        '{"type":"user","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
     });
 
     const notesDir = path.join(tmpDir, 'notes');
@@ -97,7 +98,7 @@ describe('PreCompact hook integration', () => {
       path.join(tmpDir, 'transcript.jsonl'),
       'session-1',
       'proj',
-      tmpDir
+      tmpDir,
     );
     const note1 = writeSessionNote(notesDir, session1);
     updateSessionIndex(notesDir, session1, note1);
@@ -107,7 +108,7 @@ describe('PreCompact hook integration', () => {
       path.join(tmpDir, 'transcript.jsonl'),
       'session-2',
       'proj',
-      tmpDir
+      tmpDir,
     );
     const note2 = writeSessionNote(notesDir, session2);
     updateSessionIndex(notesDir, session2, note2);

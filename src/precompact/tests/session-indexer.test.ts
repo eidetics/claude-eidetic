@@ -30,7 +30,7 @@ describe('spawnBackgroundIndexer', () => {
       expect.objectContaining({
         detached: true,
         stdio: 'ignore',
-      })
+      }),
     );
   });
 
@@ -42,7 +42,7 @@ describe('spawnBackgroundIndexer', () => {
       expect.any(Array),
       expect.objectContaining({
         env: process.env,
-      })
+      }),
     );
   });
 
@@ -71,7 +71,7 @@ describe('spawnBackgroundIndexer', () => {
       expect.any(Array),
       expect.objectContaining({
         windowsHide: true,
-      })
+      }),
     );
   });
 });

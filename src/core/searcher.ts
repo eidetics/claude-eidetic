@@ -25,7 +25,7 @@ export async function searchCode(
   if (!exists) {
     throw new SearchError(
       `Codebase at "${normalizedPath}" is not indexed. ` +
-      `Use the index_codebase tool to index it first.`,
+        `Use the index_codebase tool to index it first.`,
     );
   }
 
@@ -47,14 +47,14 @@ const CATEGORY_BOOST: Record<string, number> = {
   source: 1.0,
   test: 0.75,
   doc: 0.65,
-  config: 0.70,
-  generated: 0.60,
+  config: 0.7,
+  generated: 0.6,
 };
 const DEFAULT_BOOST = 1.0; // legacy points without fileCategory get no penalty
 
 export function applyCategoryBoost(results: SearchResult[]): SearchResult[] {
   return results
-    .map(r => ({
+    .map((r) => ({
       ...r,
       score: r.score * (CATEGORY_BOOST[r.fileCategory ?? ''] ?? DEFAULT_BOOST),
     }))
@@ -70,7 +70,7 @@ export function deduplicateResults(results: SearchResult[], limit: number): Sear
     if (accepted.length >= limit) break;
 
     const ranges = fileRanges.get(r.relativePath);
-    if (ranges && ranges.some(([s, e]) => r.startLine <= e && r.endLine >= s)) {
+    if (ranges?.some(([s, e]) => r.startLine <= e && r.endLine >= s)) {
       continue; // overlaps with an already-accepted chunk from same file
     }
 
@@ -85,7 +85,11 @@ export function deduplicateResults(results: SearchResult[], limit: number): Sear
   return accepted;
 }
 
-export function formatCompactResults(results: SearchResult[], query: string, rootPath: string): string {
+export function formatCompactResults(
+  results: SearchResult[],
+  query: string,
+  rootPath: string,
+): string {
   if (results.length === 0) {
     return `No results found for "${query}" in ${rootPath}.`;
   }
@@ -99,7 +103,9 @@ export function formatCompactResults(results: SearchResult[], query: string, roo
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     const tokens = Math.ceil(r.content.length / 4);
-    lines.push(`| ${i + 1} | \`${r.relativePath}\` | ${r.startLine}-${r.endLine} | ${r.score.toFixed(2)} | ~${tokens} |`);
+    lines.push(
+      `| ${i + 1} | \`${r.relativePath}\` | ${r.startLine}-${r.endLine} | ${r.score.toFixed(2)} | ~${tokens} |`,
+    );
   }
 
   lines.push('');
@@ -108,14 +114,16 @@ export function formatCompactResults(results: SearchResult[], query: string, roo
   return lines.join('\n');
 }
 
-export function formatSearchResults(results: SearchResult[], query: string, rootPath: string): string {
+export function formatSearchResults(
+  results: SearchResult[],
+  query: string,
+  rootPath: string,
+): string {
   if (results.length === 0) {
     return `No results found for "${query}" in ${rootPath}.`;
   }
 
-  const lines: string[] = [
-    `Found ${results.length} result(s) for "${query}" in ${rootPath}:\n`,
-  ];
+  const lines: string[] = [`Found ${results.length} result(s) for "${query}" in ${rootPath}:\n`];
 
   for (let i = 0; i < results.length; i++) {
     const r = results[i];

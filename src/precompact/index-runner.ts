@@ -47,20 +47,20 @@ async function main(): Promise<void> {
       false, // don't force re-index
       undefined, // no progress callback
       ['.md'], // only markdown files
-      [] // no extra ignore patterns
+      [], // no extra ignore patterns
     );
 
     // Register project in registry for discovery
     registerProject(notesDir);
 
     process.stderr.write(
-      `Indexed ${result.totalFiles} files (${result.totalChunks} chunks) in ${result.durationMs}ms\n`
+      `Indexed ${result.totalFiles} files (${result.totalChunks} chunks) in ${result.durationMs}ms\n`,
     );
   } catch (err) {
     // Best effort - log error but don't crash loudly
-    process.stderr.write(`Background indexing failed: ${err}\n`);
+    process.stderr.write(`Background indexing failed: ${String(err)}\n`);
     process.exit(1);
   }
 }
 
-main();
+void main();

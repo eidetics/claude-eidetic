@@ -33,11 +33,11 @@ describe('MemoryStore', () => {
 
   describe('addMemory', () => {
     it('extracts facts and stores them', async () => {
-      mockChatCompletion.mockResolvedValueOnce(JSON.stringify({
-        facts: [
-          { fact: 'Indentation style is tabs not spaces', category: 'coding_style' },
-        ],
-      }));
+      mockChatCompletion.mockResolvedValueOnce(
+        JSON.stringify({
+          facts: [{ fact: 'Indentation style is tabs not spaces', category: 'coding_style' }],
+        }),
+      );
 
       const actions = await store.addMemory('I always use tabs');
 
@@ -63,9 +63,11 @@ describe('MemoryStore', () => {
     });
 
     it('passes source to stored memories', async () => {
-      mockChatCompletion.mockResolvedValueOnce(JSON.stringify({
-        facts: [{ fact: 'Uses TypeScript strict mode', category: 'conventions' }],
-      }));
+      mockChatCompletion.mockResolvedValueOnce(
+        JSON.stringify({
+          facts: [{ fact: 'Uses TypeScript strict mode', category: 'conventions' }],
+        }),
+      );
 
       const actions = await store.addMemory('We use TS strict mode', 'conversation');
 
@@ -77,9 +79,11 @@ describe('MemoryStore', () => {
   describe('deleteMemory', () => {
     it('deletes an existing memory and logs history', async () => {
       // First add a memory
-      mockChatCompletion.mockResolvedValueOnce(JSON.stringify({
-        facts: [{ fact: 'Use React 19', category: 'tools' }],
-      }));
+      mockChatCompletion.mockResolvedValueOnce(
+        JSON.stringify({
+          facts: [{ fact: 'Use React 19', category: 'tools' }],
+        }),
+      );
       const actions = await store.addMemory('We use React 19');
       expect(actions).toHaveLength(1);
       const memoryId = actions[0].id;
@@ -103,9 +107,11 @@ describe('MemoryStore', () => {
 
   describe('getHistory', () => {
     it('returns history entries for a memory', async () => {
-      mockChatCompletion.mockResolvedValueOnce(JSON.stringify({
-        facts: [{ fact: 'Prefers dark mode', category: 'preferences' }],
-      }));
+      mockChatCompletion.mockResolvedValueOnce(
+        JSON.stringify({
+          facts: [{ fact: 'Prefers dark mode', category: 'preferences' }],
+        }),
+      );
 
       const actions = await store.addMemory('I like dark mode');
       const id = actions[0].id;

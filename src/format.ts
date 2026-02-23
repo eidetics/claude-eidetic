@@ -11,7 +11,11 @@ export function textResult(text: string) {
   return { content: [{ type: 'text' as const, text }] };
 }
 
-export function formatCleanupResult(result: CleanupResult, normalizedPath: string, dryRun: boolean): string {
+export function formatCleanupResult(
+  result: CleanupResult,
+  normalizedPath: string,
+  dryRun: boolean,
+): string {
   if (dryRun) {
     if (result.removedFiles.length === 0) {
       return `Dry run for ${normalizedPath}: no orphaned vectors found.`;
@@ -78,8 +82,7 @@ export function formatIndexResult(result: IndexResult, normalizedPath: string): 
 export function formatPreview(preview: PreviewResult, rootPath: string): string {
   const lines: string[] = [`Preview for ${rootPath}:`, ''];
 
-  const sorted = Object.entries(preview.byExtension)
-    .sort((a, b) => b[1] - a[1]);
+  const sorted = Object.entries(preview.byExtension).sort((a, b) => b[1] - a[1]);
 
   if (sorted.length > 0) {
     const maxExt = Math.max(...sorted.map(([ext]) => ext.length));
@@ -98,9 +101,10 @@ export function formatPreview(preview: PreviewResult, rootPath: string): string 
     lines.push('');
   }
 
-  const tokenStr = preview.estimatedTokens >= 1_000_000
-    ? `~${(preview.estimatedTokens / 1_000_000).toFixed(1)}M`
-    : `~${(preview.estimatedTokens / 1000).toFixed(0)}K`;
+  const tokenStr =
+    preview.estimatedTokens >= 1_000_000
+      ? `~${(preview.estimatedTokens / 1_000_000).toFixed(1)}M`
+      : `~${(preview.estimatedTokens / 1000).toFixed(0)}K`;
   lines.push(`Estimated: ${tokenStr} tokens (~$${preview.estimatedCostUsd.toFixed(4)})`, '');
 
   lines.push('Warnings:');
@@ -157,9 +161,7 @@ export function formatDocSearchResults(results: DocSearchResult[], query: string
     return `No cached documentation found for "${query}".`;
   }
 
-  const lines: string[] = [
-    `Found ${results.length} result(s) for "${query}" in cached docs:\n`,
-  ];
+  const lines: string[] = [`Found ${results.length} result(s) for "${query}" in cached docs:\n`];
 
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
@@ -208,7 +210,9 @@ export function formatMemorySearchResults(items: MemoryItem[], query: string): s
     lines.push(`   Category: ${m.category} | ID: ${m.id}`);
     if (m.source) lines.push(`   Source: ${m.source}`);
     if (m.created_at || m.updated_at) {
-      lines.push(`   Created: ${m.created_at || 'unknown'} | Updated: ${m.updated_at || 'unknown'}`);
+      lines.push(
+        `   Created: ${m.created_at || 'unknown'} | Updated: ${m.updated_at || 'unknown'}`,
+      );
     }
     lines.push('');
   }
@@ -226,8 +230,12 @@ export function formatMemoryList(items: MemoryItem[]): string {
   const grouped = new Map<string, MemoryItem[]>();
   for (const m of items) {
     const cat = m.category || 'uncategorized';
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(m);
+    let catList = grouped.get(cat);
+    if (!catList) {
+      catList = [];
+      grouped.set(cat, catList);
+    }
+    catList.push(m);
   }
 
   for (const [category, memories] of grouped) {

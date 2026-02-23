@@ -120,7 +120,8 @@ export class MemoryStore {
       if (!Array.isArray(facts)) return [];
       return facts.filter(
         (f: unknown): f is ExtractedFact =>
-          typeof f === 'object' && f !== null &&
+          typeof f === 'object' &&
+          f !== null &&
           typeof (f as ExtractedFact).fact === 'string' &&
           typeof (f as ExtractedFact).category === 'string',
       );
@@ -179,7 +180,14 @@ export class MemoryStore {
         updated_at: now,
       });
 
-      this.history.log(decision.existingId, 'UPDATE', fact.fact, decision.existingMemory, source, now);
+      this.history.log(
+        decision.existingId,
+        'UPDATE',
+        fact.fact,
+        decision.existingMemory,
+        source,
+        now,
+      );
 
       return {
         event: 'UPDATE',

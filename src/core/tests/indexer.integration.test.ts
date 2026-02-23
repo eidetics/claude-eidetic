@@ -89,7 +89,7 @@ describe('indexCodebase integration', () => {
     expect(second.removedFiles).toBe(1); // a.ts
 
     // Verify deleteByPath was called for removed and modified files
-    const deleteCalls = vectordb.calls.filter(c => c.method === 'deleteByPath');
+    const deleteCalls = vectordb.calls.filter((c) => c.method === 'deleteByPath');
     expect(deleteCalls.length).toBeGreaterThanOrEqual(2); // a.ts removed + b.ts modified
   });
 
@@ -100,8 +100,8 @@ describe('indexCodebase integration', () => {
     const result = await indexCodebase(tmpDir, embedding, vectordb, true);
 
     // Force should have called dropCollection and createCollection
-    const drops = vectordb.calls.filter(c => c.method === 'dropCollection');
-    const creates = vectordb.calls.filter(c => c.method === 'createCollection');
+    const drops = vectordb.calls.filter((c) => c.method === 'dropCollection');
+    const creates = vectordb.calls.filter((c) => c.method === 'createCollection');
     expect(drops.length).toBeGreaterThanOrEqual(1);
     expect(creates.length).toBeGreaterThanOrEqual(2); // first index + force
     expect(result.addedFiles).toBe(1);
@@ -126,9 +126,7 @@ describe('indexCodebase integration', () => {
   it('throws for empty codebase (no indexable files)', async () => {
     tmpDir = createTempCodebase({ 'readme.txt': 'no code here' });
 
-    await expect(
-      indexCodebase(tmpDir, embedding, vectordb),
-    ).rejects.toThrow('No indexable files');
+    await expect(indexCodebase(tmpDir, embedding, vectordb)).rejects.toThrow('No indexable files');
   });
 
   it('records parse failures but still indexes other files', async () => {

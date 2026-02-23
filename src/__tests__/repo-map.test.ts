@@ -76,8 +76,18 @@ describe('extractSymbolInfo', () => {
   it('recurses into export_statement', () => {
     const exportCode = 'export function greet() {}';
     const ident = makeIdent('greet', 16);
-    const funcNode = { type: 'function_declaration', startIndex: 7, endIndex: exportCode.length, children: [ident] };
-    const exportNode = { type: 'export_statement', startIndex: 0, endIndex: exportCode.length, children: [funcNode] };
+    const funcNode = {
+      type: 'function_declaration',
+      startIndex: 7,
+      endIndex: exportCode.length,
+      children: [ident],
+    };
+    const exportNode = {
+      type: 'export_statement',
+      startIndex: 0,
+      endIndex: exportCode.length,
+      children: [funcNode],
+    };
     const result = extractSymbolInfo(exportNode as any, exportCode);
     expect(result).toBeTruthy();
     expect(result!.name).toBe('greet');
@@ -141,7 +151,9 @@ describe('matchesPathFilter', () => {
 
 // ── generateRepoMap ──────────────────────────────────────────────────────────
 
-function makeDoc(overrides: Partial<import('../vectordb/types.js').CodeDocument>): import('../vectordb/types.js').CodeDocument {
+function makeDoc(
+  overrides: Partial<import('../vectordb/types.js').CodeDocument>,
+): import('../vectordb/types.js').CodeDocument {
   return {
     id: Math.random().toString(36).slice(2),
     content: 'code here',
@@ -172,14 +184,16 @@ describe('generateRepoMap', () => {
     const name = pathToCollectionName('/project');
     await db.createCollection(name, 2);
     for (const sym of symbols) {
-      await db.insert(name, [makeDoc({
-        relativePath: sym.relativePath,
-        startLine: sym.startLine,
-        symbolName: sym.name,
-        symbolKind: sym.kind,
-        symbolSignature: sym.signature,
-        parentSymbol: sym.parentName,
-      })]);
+      await db.insert(name, [
+        makeDoc({
+          relativePath: sym.relativePath,
+          startLine: sym.startLine,
+          symbolName: sym.name,
+          symbolKind: sym.kind,
+          symbolSignature: sym.signature,
+          parentSymbol: sym.parentName,
+        }),
+      ]);
     }
     return name;
   }
@@ -209,13 +223,19 @@ describe('generateRepoMap', () => {
   it('nests methods under parent class', async () => {
     await setupCollection([
       { name: 'Calculator', kind: 'class', relativePath: 'src/calc.ts', startLine: 1 },
-      { name: 'add', kind: 'method', relativePath: 'src/calc.ts', startLine: 3, parentName: 'Calculator' },
+      {
+        name: 'add',
+        kind: 'method',
+        relativePath: 'src/calc.ts',
+        startLine: 3,
+        parentName: 'Calculator',
+      },
     ]);
     const source = new VectorDBSymbolSource(db);
     const result = await generateRepoMap('/project', source);
     const lines = result.split('\n');
-    const classLine = lines.findIndex(l => l.includes('[class]') && l.includes('Calculator'));
-    const methodLine = lines.findIndex(l => l.includes('[method]') && l.includes('add'));
+    const classLine = lines.findIndex((l) => l.includes('[class]') && l.includes('Calculator'));
+    const methodLine = lines.findIndex((l) => l.includes('[method]') && l.includes('add'));
     expect(classLine).toBeLessThan(methodLine);
     // Method should be more indented
     expect(lines[methodLine].startsWith('    ')).toBe(true);
@@ -249,8 +269,19 @@ describe('generateRepoMap', () => {
     await db.createCollection(name, 2);
     // Two docs for same symbol - one with signature, one without
     await db.insert(name, [
-      makeDoc({ relativePath: 'src/foo.ts', startLine: 1, symbolName: 'greet', symbolKind: 'function' }),
-      makeDoc({ relativePath: 'src/foo.ts', startLine: 1, symbolName: 'greet', symbolKind: 'function', symbolSignature: 'function greet()' }),
+      makeDoc({
+        relativePath: 'src/foo.ts',
+        startLine: 1,
+        symbolName: 'greet',
+        symbolKind: 'function',
+      }),
+      makeDoc({
+        relativePath: 'src/foo.ts',
+        startLine: 1,
+        symbolName: 'greet',
+        symbolKind: 'function',
+        symbolSignature: 'function greet()',
+      }),
     ]);
     const source = new VectorDBSymbolSource(db);
     const result = await generateRepoMap('/project', source);
@@ -286,14 +317,16 @@ describe('listSymbolsTable', () => {
     const name = pathToCollectionName('/project');
     await db.createCollection(name, 2);
     for (const sym of symbols) {
-      await db.insert(name, [makeDoc({
-        relativePath: sym.relativePath,
-        startLine: sym.startLine,
-        symbolName: sym.name,
-        symbolKind: sym.kind,
-        symbolSignature: sym.signature,
-        parentSymbol: sym.parentName,
-      })]);
+      await db.insert(name, [
+        makeDoc({
+          relativePath: sym.relativePath,
+          startLine: sym.startLine,
+          symbolName: sym.name,
+          symbolKind: sym.kind,
+          symbolSignature: sym.signature,
+          parentSymbol: sym.parentName,
+        }),
+      ]);
     }
   }
 
@@ -307,9 +340,7 @@ describe('listSymbolsTable', () => {
   });
 
   it('formats as Name|Kind|Location table', async () => {
-    await setup([
-      { name: 'greet', kind: 'function', relativePath: 'src/foo.ts', startLine: 5 },
-    ]);
+    await setup([{ name: 'greet', kind: 'function', relativePath: 'src/foo.ts', startLine: 5 }]);
     const source = new VectorDBSymbolSource(db);
     const result = await listSymbolsTable('/project', source);
     expect(result).toContain('Name | Kind | Location');
@@ -352,9 +383,19 @@ describe('VectorDBSymbolSource', () => {
     const name = pathToCollectionName('/project');
     await db.createCollection(name, 2);
     await db.insert(name, [
-      makeDoc({ relativePath: 'src/a.ts', startLine: 1, symbolName: 'alpha', symbolKind: 'function' }),
+      makeDoc({
+        relativePath: 'src/a.ts',
+        startLine: 1,
+        symbolName: 'alpha',
+        symbolKind: 'function',
+      }),
       makeDoc({ relativePath: 'src/b.ts', startLine: 2, symbolName: 'Beta', symbolKind: 'class' }),
-      makeDoc({ relativePath: 'lib/c.ts', startLine: 3, symbolName: 'gamma', symbolKind: 'function' }),
+      makeDoc({
+        relativePath: 'lib/c.ts',
+        startLine: 3,
+        symbolName: 'gamma',
+        symbolKind: 'function',
+      }),
       makeDoc({ relativePath: 'src/a.ts', startLine: 5, symbolName: '', symbolKind: '' }),
     ]);
   });
@@ -372,7 +413,7 @@ describe('VectorDBSymbolSource', () => {
     const name = pathToCollectionName('/project');
     const source = new VectorDBSymbolSource(db);
     const syms = await source.getSymbols(name, { pathFilter: 'src/**' });
-    expect(syms.every(s => s.relativePath.startsWith('src/'))).toBe(true);
+    expect(syms.every((s) => s.relativePath.startsWith('src/'))).toBe(true);
   });
 
   it('applies kindFilter', async () => {
@@ -380,7 +421,7 @@ describe('VectorDBSymbolSource', () => {
     const name = pathToCollectionName('/project');
     const source = new VectorDBSymbolSource(db);
     const syms = await source.getSymbols(name, { kindFilter: 'class' });
-    expect(syms.every(s => s.kind === 'class')).toBe(true);
+    expect(syms.every((s) => s.kind === 'class')).toBe(true);
     expect(syms.length).toBeGreaterThan(0);
   });
 });
@@ -389,7 +430,7 @@ describe('VectorDBSymbolSource', () => {
 
 describe('tool schemas', () => {
   it('browse_structure uses "kind" not "kindFilter"', () => {
-    const schema = TOOL_DEFINITIONS.find(t => t.name === 'browse_structure');
+    const schema = TOOL_DEFINITIONS.find((t) => t.name === 'browse_structure');
     const props = schema?.inputSchema.properties as Record<string, unknown> | undefined;
     expect(props).toHaveProperty('kind');
     expect(props).not.toHaveProperty('kindFilter');

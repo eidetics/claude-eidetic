@@ -1,6 +1,12 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { randomUUID } from 'node:crypto';
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from './types.js';
+import type {
+  VectorDB,
+  CodeDocument,
+  HybridSearchParams,
+  SearchResult,
+  SymbolEntry,
+} from './types.js';
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
 
@@ -14,7 +20,7 @@ export class QdrantVectorDB implements VectorDB {
     const config = getConfig();
     this.client = new QdrantClient({
       url: url ?? config.qdrantUrl,
-      ...(apiKey ?? config.qdrantApiKey ? { apiKey: apiKey ?? config.qdrantApiKey } : {}),
+      ...((apiKey ?? config.qdrantApiKey) ? { apiKey: apiKey ?? config.qdrantApiKey } : {}),
     });
   }
 
@@ -81,7 +87,7 @@ export class QdrantVectorDB implements VectorDB {
         const batch = documents.slice(i, i + batchSize);
         await this.client.upsert(name, {
           wait: true,
-          points: batch.map(doc => ({
+          points: batch.map((doc) => ({
             id: doc.id ?? randomUUID(),
             vector: { dense: doc.vector },
             payload: {
@@ -111,7 +117,7 @@ export class QdrantVectorDB implements VectorDB {
 
       const extensionFilter = params.extensionFilter?.length
         ? {
-            should: params.extensionFilter.map(ext => ({
+            should: params.extensionFilter.map((ext) => ({
               key: 'fileExtension',
               match: { value: ext },
             })),
@@ -145,7 +151,10 @@ export class QdrantVectorDB implements VectorDB {
     }
   }
 
-  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+  async getById(
+    name: string,
+    id: string,
+  ): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
     try {
       const results = await this.client.retrieve(name, {
         ids: [id],
@@ -157,7 +166,7 @@ export class QdrantVectorDB implements VectorDB {
       const vectors = point.vector as Record<string, number[]> | number[] | undefined;
       const vector = Array.isArray(vectors) ? vectors : (vectors?.dense ?? []);
       return {
-        payload: (point.payload ?? {}) as Record<string, unknown>,
+        payload: point.payload ?? {},
         vector,
       };
     } catch (err) {
@@ -165,15 +174,22 @@ export class QdrantVectorDB implements VectorDB {
     }
   }
 
-  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+  async updatePoint(
+    name: string,
+    id: string,
+    vector: number[],
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     try {
       await this.client.upsert(name, {
         wait: true,
-        points: [{
-          id,
-          vector: { dense: vector },
-          payload,
-        }],
+        points: [
+          {
+            id,
+            vector: { dense: vector },
+            payload,
+          },
+        ],
       });
     } catch (err) {
       throw new VectorDBError(`Failed to update point "${id}" in "${name}"`, err);
@@ -189,7 +205,10 @@ export class QdrantVectorDB implements VectorDB {
         wait: true,
       });
     } catch (err) {
-      throw new VectorDBError(`Failed to delete documents for path "${relativePath}" from "${name}"`, err);
+      throw new VectorDBError(
+        `Failed to delete documents for path "${relativePath}" from "${name}"`,
+        err,
+      );
     }
   }
 
@@ -248,13 +267,21 @@ export function rankByTermFrequency(
 ): RankedPoint[] {
   if (points.length === 0) return [];
 
-  const terms = [...new Set(queryText.toLowerCase().split(/\s+/).filter(t => t.length > 0))];
-  if (terms.length === 0) return points.map(p => ({ ...p, rawScore: 0 }));
+  const terms = [
+    ...new Set(
+      queryText
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((t) => t.length > 0),
+    ),
+  ];
+  if (terms.length === 0) return points.map((p) => ({ ...p, rawScore: 0 }));
 
-  const termPatterns = terms.map(t => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
+  const termPatterns = terms.map((t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
 
-  const scored = points.map(point => {
-    const content = ((point.payload as Record<string, unknown> | undefined)?.content as string) ?? '';
+  const scored = points.map((point) => {
+    const content =
+      ((point.payload as Record<string, unknown> | undefined)?.content as string) ?? '';
     const wordCount = Math.max(1, content.split(/\s+/).length);
 
     let hits = 0;
@@ -270,7 +297,7 @@ export function rankByTermFrequency(
 
   scored.sort((a, b) => b.tf - a.tf);
   const maxTf = scored[0].tf;
-  return scored.map(s => ({
+  return scored.map((s) => ({
     ...s.point,
     rawScore: maxTf > 0 ? s.tf / maxTf : 0,
   }));
@@ -287,7 +314,10 @@ interface ScoredPayload {
   fileCategory: string;
 }
 
-export function extractPayload(point: { id: string | number; payload?: Record<string, unknown> | null }): ScoredPayload {
+export function extractPayload(point: {
+  id: string | number;
+  payload?: Record<string, unknown> | null;
+}): ScoredPayload {
   const p = point.payload ?? {};
   return {
     id: point.id,

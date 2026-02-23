@@ -50,7 +50,9 @@ describe('snapshot-io', () => {
   });
 
   it('deleteSnapshot does not throw for nonexistent', () => {
-    expect(() => deleteSnapshot('/nonexistent')).not.toThrow();
+    expect(() => {
+      deleteSnapshot('/nonexistent');
+    }).not.toThrow();
   });
 
   it('snapshotExists returns correct boolean', () => {

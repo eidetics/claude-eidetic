@@ -33,8 +33,8 @@ function loadMessages(): SetupMessages {
 }
 
 function detectContext(): SetupContext {
-  const hasKey = !!process.env['OPENAI_API_KEY'];
-  const isOllama = process.env['EMBEDDING_PROVIDER'] === 'ollama';
+  const hasKey = !!process.env.OPENAI_API_KEY;
+  const isOllama = process.env.EMBEDDING_PROVIDER === 'ollama';
   if (!hasKey && !isOllama) return 'missing';
   return 'invalid';
 }
@@ -45,9 +45,7 @@ export function getSetupErrorMessage(errorDetail: string, context?: SetupContext
   const block = msgs.setup[ctx];
 
   const header = block.header.replace('{error}', errorDetail);
-  const diagnosis = block.diagnosis.trim()
-    ? `**Diagnosis:** ${block.diagnosis.trim()}\n\n`
-    : '';
+  const diagnosis = block.diagnosis.trim() ? `**Diagnosis:** ${block.diagnosis.trim()}\n\n` : '';
 
   return (
     `${header}\n\n` +

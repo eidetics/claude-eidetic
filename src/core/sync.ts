@@ -3,9 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { glob } from 'glob';
 
-export interface FileSnapshot {
-  [relativePath: string]: { contentHash: string };
-}
+export type FileSnapshot = Record<string, { contentHash: string }>;
 
 interface SyncResult {
   added: string[];
@@ -14,34 +12,60 @@ interface SyncResult {
 }
 
 const DEFAULT_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.py', '.pyi',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.py',
+  '.pyi',
   '.go',
   '.java',
   '.rs',
-  '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp',
+  '.cpp',
+  '.cc',
+  '.cxx',
+  '.c',
+  '.h',
+  '.hpp',
   '.cs',
   '.scala',
   '.rb',
   '.php',
   '.swift',
-  '.kt', '.kts',
+  '.kt',
+  '.kts',
   '.lua',
-  '.sh', '.bash', '.zsh',
+  '.sh',
+  '.bash',
+  '.zsh',
   '.sql',
-  '.r', '.R',
-  '.m', '.mm',  // Objective-C
+  '.r',
+  '.R',
+  '.m',
+  '.mm', // Objective-C
   '.dart',
-  '.ex', '.exs', // Elixir
-  '.erl', '.hrl', // Erlang
+  '.ex',
+  '.exs', // Elixir
+  '.erl',
+  '.hrl', // Erlang
   '.hs', // Haskell
-  '.ml', '.mli', // OCaml
-  '.vue', '.svelte', '.astro',
-  '.yaml', '.yml',
+  '.ml',
+  '.mli', // OCaml
+  '.vue',
+  '.svelte',
+  '.astro',
+  '.yaml',
+  '.yml',
   '.toml',
   '.json',
-  '.md', '.mdx',
-  '.html', '.css', '.scss', '.less',
+  '.md',
+  '.mdx',
+  '.html',
+  '.css',
+  '.scss',
+  '.less',
 ]);
 
 const DEFAULT_IGNORE = [
@@ -82,9 +106,7 @@ export async function scanFiles(
     absolute: false,
   });
 
-  return files
-    .filter(f => extensions.has(path.extname(f).toLowerCase()))
-    .sort();
+  return files.filter((f) => extensions.has(path.extname(f).toLowerCase())).sort();
 }
 
 function hashFileContent(fullPath: string): string {
@@ -100,7 +122,7 @@ export function buildSnapshot(rootPath: string, relativePaths: string[]): FileSn
       const contentHash = hashFileContent(fullPath);
       snapshot[rel] = { contentHash };
     } catch (err) {
-      console.warn(`Skipping "${rel}": ${err}`);
+      console.warn(`Skipping "${rel}":`, err);
     }
   }
   return snapshot;
@@ -132,9 +154,9 @@ export function diffSnapshots(previous: FileSnapshot, current: FileSnapshot): Sy
 export function parseGitignorePatterns(content: string): string[] {
   return content
     .split('\n')
-    .map(line => line.trim())
-    .filter(line => line && !line.startsWith('#') && !line.startsWith('!'))
-    .map(pattern => {
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#') && !line.startsWith('!'))
+    .map((pattern) => {
       pattern = pattern.replace(/\s+$/, '');
       if (pattern.endsWith('/')) {
         pattern = pattern.slice(0, -1);
@@ -143,7 +165,7 @@ export function parseGitignorePatterns(content: string): string[] {
       if (!pattern.includes('/')) return `**/${pattern}`;
       return pattern;
     })
-    .filter(p => p.length > 0);
+    .filter((p) => p.length > 0);
 }
 
 function readGitignore(rootPath: string): string[] {
@@ -158,25 +180,55 @@ function readGitignore(rootPath: string): string[] {
 
 export function extensionToLanguage(ext: string): string {
   const map: Record<string, string> = {
-    '.ts': 'typescript', '.tsx': 'tsx',
-    '.js': 'javascript', '.jsx': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript',
-    '.py': 'python', '.pyi': 'python',
+    '.ts': 'typescript',
+    '.tsx': 'tsx',
+    '.js': 'javascript',
+    '.jsx': 'javascript',
+    '.mjs': 'javascript',
+    '.cjs': 'javascript',
+    '.py': 'python',
+    '.pyi': 'python',
     '.go': 'go',
     '.java': 'java',
     '.rs': 'rust',
-    '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp', '.c': 'c', '.h': 'cpp', '.hpp': 'cpp',
+    '.cpp': 'cpp',
+    '.cc': 'cpp',
+    '.cxx': 'cpp',
+    '.c': 'c',
+    '.h': 'cpp',
+    '.hpp': 'cpp',
     '.cs': 'csharp',
     '.scala': 'scala',
-    '.rb': 'ruby', '.php': 'php', '.swift': 'swift',
-    '.kt': 'kotlin', '.kts': 'kotlin',
-    '.lua': 'lua', '.sh': 'bash', '.bash': 'bash', '.zsh': 'bash',
-    '.sql': 'sql', '.r': 'r', '.R': 'r',
-    '.dart': 'dart', '.ex': 'elixir', '.exs': 'elixir',
-    '.hs': 'haskell', '.ml': 'ocaml',
-    '.vue': 'vue', '.svelte': 'svelte', '.astro': 'astro',
-    '.yaml': 'yaml', '.yml': 'yaml', '.toml': 'toml', '.json': 'json',
-    '.md': 'markdown', '.mdx': 'markdown',
-    '.html': 'html', '.css': 'css', '.scss': 'scss', '.less': 'less',
+    '.rb': 'ruby',
+    '.php': 'php',
+    '.swift': 'swift',
+    '.kt': 'kotlin',
+    '.kts': 'kotlin',
+    '.lua': 'lua',
+    '.sh': 'bash',
+    '.bash': 'bash',
+    '.zsh': 'bash',
+    '.sql': 'sql',
+    '.r': 'r',
+    '.R': 'r',
+    '.dart': 'dart',
+    '.ex': 'elixir',
+    '.exs': 'elixir',
+    '.hs': 'haskell',
+    '.ml': 'ocaml',
+    '.vue': 'vue',
+    '.svelte': 'svelte',
+    '.astro': 'astro',
+    '.yaml': 'yaml',
+    '.yml': 'yaml',
+    '.toml': 'toml',
+    '.json': 'json',
+    '.md': 'markdown',
+    '.mdx': 'markdown',
+    '.html': 'html',
+    '.css': 'css',
+    '.scss': 'scss',
+    '.less': 'less',
   };
   return map[ext.toLowerCase()] ?? 'unknown';
 }

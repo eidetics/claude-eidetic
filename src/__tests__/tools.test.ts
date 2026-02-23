@@ -68,16 +68,18 @@ describe('ToolHandlers', () => {
 
     it('returns results for valid query against indexed collection', async () => {
       await vectordb.createCollection(TEST_COL, 32);
-      await vectordb.insert(TEST_COL, [{
-        id: '1',
-        content: 'function hello() { return "world"; }',
-        vector: new Array(32).fill(0.1),
-        relativePath: 'src/hello.ts',
-        startLine: 1,
-        endLine: 3,
-        fileExtension: '.ts',
-        language: 'typescript',
-      }]);
+      await vectordb.insert(TEST_COL, [
+        {
+          id: '1',
+          content: 'function hello() { return "world"; }',
+          vector: new Array(32).fill(0.1),
+          relativePath: 'src/hello.ts',
+          startLine: 1,
+          endLine: 3,
+          fileExtension: '.ts',
+          language: 'typescript',
+        },
+      ]);
 
       const result = await handlers.handleSearchCode({
         path: TEST_PATH,

@@ -30,19 +30,60 @@ const languageParsers: Record<string, () => unknown> = {
 // AST node types that represent logical code units per language
 const SPLITTABLE_TYPES: Record<string, string[]> = {
   javascript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition'],
-  typescript: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'interface_declaration', 'type_alias_declaration'],
-  tsx: ['function_declaration', 'arrow_function', 'class_declaration', 'method_definition', 'interface_declaration', 'type_alias_declaration'],
-  python: ['function_definition', 'class_definition', 'decorated_definition', 'async_function_definition'],
-  java: ['method_declaration', 'class_declaration', 'interface_declaration', 'constructor_declaration'],
+  typescript: [
+    'function_declaration',
+    'arrow_function',
+    'class_declaration',
+    'method_definition',
+    'interface_declaration',
+    'type_alias_declaration',
+  ],
+  tsx: [
+    'function_declaration',
+    'arrow_function',
+    'class_declaration',
+    'method_definition',
+    'interface_declaration',
+    'type_alias_declaration',
+  ],
+  python: [
+    'function_definition',
+    'class_definition',
+    'decorated_definition',
+    'async_function_definition',
+  ],
+  java: [
+    'method_declaration',
+    'class_declaration',
+    'interface_declaration',
+    'constructor_declaration',
+  ],
   cpp: ['function_definition', 'class_specifier', 'namespace_definition', 'declaration'],
-  go: ['function_declaration', 'method_declaration', 'type_declaration', 'var_declaration', 'const_declaration'],
+  go: [
+    'function_declaration',
+    'method_declaration',
+    'type_declaration',
+    'var_declaration',
+    'const_declaration',
+  ],
   rust: ['function_item', 'impl_item', 'struct_item', 'enum_item', 'trait_item', 'mod_item'],
-  csharp: ['method_declaration', 'class_declaration', 'interface_declaration', 'struct_declaration', 'enum_declaration'],
+  csharp: [
+    'method_declaration',
+    'class_declaration',
+    'interface_declaration',
+    'struct_declaration',
+    'enum_declaration',
+  ],
 };
 
 const LANG_CANONICAL: Record<string, string> = {
-  js: 'javascript', ts: 'typescript', py: 'python',
-  rs: 'rust', 'c++': 'cpp', c: 'cpp', cs: 'csharp',
+  js: 'javascript',
+  ts: 'typescript',
+  py: 'python',
+  rs: 'rust',
+  'c++': 'cpp',
+  c: 'cpp',
+  cs: 'csharp',
 };
 
 export class AstSplitter implements Splitter {
@@ -52,7 +93,7 @@ export class AstSplitter implements Splitter {
   // Shared across all AstSplitter instances — one cache per process
   private static langCache = new Map<string, unknown>();
 
-  private static resolveLanguage(lang: string): unknown | null {
+  private static resolveLanguage(lang: string): unknown {
     const canonical = LANG_CANONICAL[lang] ?? lang;
 
     const cached = AstSplitter.langCache.get(canonical);
@@ -66,7 +107,7 @@ export class AstSplitter implements Splitter {
       AstSplitter.langCache.set(canonical, mod);
       return mod;
     } catch (err) {
-      console.warn(`Failed to load tree-sitter parser for "${lang}": ${err}`);
+      console.warn(`Failed to load tree-sitter parser for "${lang}":`, err);
       return null;
     }
   }
@@ -96,7 +137,7 @@ export class AstSplitter implements Splitter {
 
       return this.refineChunks(rawChunks);
     } catch (err) {
-      console.warn(`AST parse failed for "${filePath}" (${language}): ${err}`);
+      console.warn(`AST parse failed for "${filePath}" (${language}):`, err);
       return [];
     }
   }
@@ -106,7 +147,14 @@ export class AstSplitter implements Splitter {
   }
 
   private extractChunks(
-    node: { type: string; startPosition: { row: number }; endPosition: { row: number }; startIndex: number; endIndex: number; children: unknown[] },
+    node: {
+      type: string;
+      startPosition: { row: number };
+      endPosition: { row: number };
+      startIndex: number;
+      endIndex: number;
+      children: unknown[];
+    },
     code: string,
     splittableTypes: string[],
     language: string,
@@ -140,14 +188,14 @@ export class AstSplitter implements Splitter {
 
           // If this is a container, pass its name as parentName to children
           if (isContainerType(current.type) && symbolInfo?.name) {
-            for (const child of current.children as typeof node[]) {
+            for (const child of current.children as (typeof node)[]) {
               traverse(child, symbolInfo.name);
             }
             return;
           }
         }
       }
-      for (const child of current.children as typeof node[]) {
+      for (const child of current.children as (typeof node)[]) {
         traverse(child, parentName);
       }
     };

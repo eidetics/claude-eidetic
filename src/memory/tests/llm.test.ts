@@ -18,7 +18,9 @@ let lastOpenAIOptions: unknown;
 vi.mock('@anthropic-ai/sdk', () => ({
   default: class MockAnthropic {
     messages = { create: mockAnthropicCreate };
-    constructor(options: unknown) { lastAnthropicOptions = options; }
+    constructor(options: unknown) {
+      lastAnthropicOptions = options;
+    }
   },
 }));
 
@@ -26,7 +28,9 @@ vi.mock('@anthropic-ai/sdk', () => ({
 vi.mock('openai', () => ({
   default: class MockOpenAI {
     chat = { completions: { create: mockOpenAICreate } };
-    constructor(options: unknown) { lastOpenAIOptions = options; }
+    constructor(options: unknown) {
+      lastOpenAIOptions = options;
+    }
   },
 }));
 
@@ -156,10 +160,12 @@ describe('chatCompletion', () => {
       } as ReturnType<typeof getConfig>);
 
       const result = await chatCompletion('sys', 'user');
-      expect(mockOpenAICreate).toHaveBeenCalledWith(expect.objectContaining({
-        model: 'gpt-4o-mini',
-        response_format: { type: 'json_object' },
-      }));
+      expect(mockOpenAICreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gpt-4o-mini',
+          response_format: { type: 'json_object' },
+        }),
+      );
       expect(result).toBe('{"facts":[]}');
     });
   });

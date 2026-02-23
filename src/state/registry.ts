@@ -2,9 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getRegistryPath } from '../paths.js';
 
-interface Registry {
-  [project: string]: string;
-}
+type Registry = Record<string, string>;
 
 function readRegistry(): Registry {
   const registryPath = getRegistryPath();
