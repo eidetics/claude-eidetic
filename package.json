@@ -41,7 +41,7 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@qdrant/js-client-rest": "^1.13.0",
     "better-sqlite3": "^12.6.2",
-    "glob": "^10.0.0",
+    "glob": "^11.0.0",
     "openai": "^5.1.1",
     "tree-sitter": "^0.21.1",
     "tree-sitter-c-sharp": "^0.21.0",
@@ -71,6 +71,10 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.0",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "minimatch": "^10.2.1",
+    "@grpc/grpc-js": "^1.8.22"
   },
   "engines": {
     "node": ">=20.0.0"
