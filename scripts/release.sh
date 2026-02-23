@@ -29,7 +29,6 @@ fi
 echo "Running tests..."
 npm run typecheck
 npm test
-npm run test:audit
 
 # Bump version in package.json and create git tag
 echo "Bumping $BUMP version..."

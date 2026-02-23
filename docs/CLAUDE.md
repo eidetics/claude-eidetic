@@ -22,7 +22,6 @@ npm run test:watch          # watch mode
 npm run test:coverage       # with coverage
 npm run test:integration    # requires running Qdrant
 npm run test:all            # unit + integration
-npm run test:audit          # custom code quality audits
 ```
 
 Run a single test file: `npx vitest run src/core/searcher.test.ts`
