@@ -1,6 +1,7 @@
 import { scanFiles, buildSnapshot, diffSnapshots } from './sync.js';
 import { loadSnapshot, saveSnapshot } from './snapshot-io.js';
 import { pathToCollectionName } from '../paths.js';
+import { IndexingError } from '../errors.js';
 import type { VectorDB } from '../vectordb/types.js';
 
 export interface CleanupResult {
@@ -20,7 +21,7 @@ export async function cleanupVectors(
 
   const previousSnapshot = loadSnapshot(rootPath);
   if (!previousSnapshot) {
-    throw new Error(`No snapshot found for ${rootPath}. Index the codebase first before running cleanup.`);
+    throw new IndexingError(`No snapshot found for ${rootPath}. Index the codebase first before running cleanup.`);
   }
 
   onProgress?.(10, 'Scanning files on disk...');
