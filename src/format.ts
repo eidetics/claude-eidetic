@@ -1,3 +1,4 @@
+import type { CleanupResult } from './core/cleanup.js';
 import type { PreviewResult, IndexResult } from './core/indexer.js';
 import type { DocIndexResult } from './core/doc-indexer.js';
 import type { DocSearchResult } from './core/doc-searcher.js';
@@ -8,6 +9,39 @@ import { listProjects } from './state/registry.js';
 
 export function textResult(text: string) {
   return { content: [{ type: 'text' as const, text }] };
+}
+
+export function formatCleanupResult(result: CleanupResult, normalizedPath: string, dryRun: boolean): string {
+  if (dryRun) {
+    if (result.removedFiles.length === 0) {
+      return `Dry run for ${normalizedPath}: no orphaned vectors found.`;
+    }
+    const lines = [
+      `Dry run for ${normalizedPath}: ${result.removedFiles.length} file(s) would be cleaned:`,
+      '',
+    ];
+    for (const f of result.removedFiles) {
+      lines.push(`  - ${f}`);
+    }
+    return lines.join('\n');
+  }
+
+  if (result.totalRemoved === 0) {
+    return `Cleanup complete for ${normalizedPath}: no orphaned vectors found.`;
+  }
+
+  const lines = [
+    `Cleanup complete for ${normalizedPath}`,
+    '',
+    `  Removed:   ${result.totalRemoved} file(s)`,
+    `  Duration:  ${(result.durationMs / 1000).toFixed(1)}s`,
+    '',
+    'Cleaned files:',
+  ];
+  for (const f of result.removedFiles) {
+    lines.push(`  - ${f}`);
+  }
+  return lines.join('\n');
 }
 
 export function formatIndexResult(result: IndexResult, normalizedPath: string): string {

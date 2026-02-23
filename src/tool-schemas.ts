@@ -23,6 +23,13 @@ Much cheaper than re-fetching docs (~20 tokens/result vs ~5K+ tokens/fetch).
 If a specific library is provided, searches only that library's collection. \
 Otherwise searches across all cached documentation. Results include staleness indicators.`;
 
+const CLEANUP_DESCRIPTION = `\
+Remove orphaned vectors for files that no longer exist on disk. Lightweight alternative to re-indexing — no embedding cost.
+
+Provide either \`path\` (absolute) or \`project\` (name). Use \`list_indexed\` to see registered projects.
+
+Use \`dryRun=true\` first to preview which files would be cleaned without making any changes.`;
+
 const INDEX_DESCRIPTION = `\
 Index a codebase directory to enable semantic search using a configurable code splitter.
 
@@ -173,6 +180,29 @@ export const TOOL_DEFINITIONS = [
     inputSchema: {
       type: 'object' as const,
       properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'cleanup_vectors',
+    description: CLEANUP_DESCRIPTION,
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path to the codebase directory.',
+        },
+        project: {
+          type: 'string',
+          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+        },
+        dryRun: {
+          type: 'boolean',
+          description: 'List files that would be cleaned without actually deleting any vectors.',
+          default: false,
+        },
+      },
       required: [],
     },
   },
