@@ -38,7 +38,7 @@ describe('extractSymbolInfo', () => {
   it('extracts a function_declaration', () => {
     const ident = makeIdent('greet', 9);
     const node = { ...makeNode('function_declaration', code), children: [ident] };
-    const result = extractSymbolInfo(node as any, code, 'typescript');
+    const result = extractSymbolInfo(node as any, code);
     expect(result).toBeTruthy();
     expect(result!.name).toBe('greet');
     expect(result!.kind).toBe('function');
@@ -49,7 +49,7 @@ describe('extractSymbolInfo', () => {
     const classCode = 'class Calculator { add() {} }';
     const ident = makeIdent('Calculator', 6);
     const node = { ...makeNode('class_declaration', classCode), children: [ident] };
-    const result = extractSymbolInfo(node as any, classCode, 'typescript');
+    const result = extractSymbolInfo(node as any, classCode);
     expect(result).toBeTruthy();
     expect(result!.name).toBe('Calculator');
     expect(result!.kind).toBe('class');
@@ -59,7 +59,7 @@ describe('extractSymbolInfo', () => {
     const code = 'interface Config { apiKey: string; }';
     const ident = makeIdent('Config', 10);
     const node = { ...makeNode('interface_declaration', code), children: [ident] };
-    const result = extractSymbolInfo(node as any, code, 'typescript');
+    const result = extractSymbolInfo(node as any, code);
     expect(result!.kind).toBe('interface');
     expect(result!.name).toBe('Config');
   });
@@ -68,7 +68,7 @@ describe('extractSymbolInfo', () => {
     const methodCode = 'add(a: number, b: number): number { return a + b; }';
     const ident = makeIdent('add', 0);
     const node = { ...makeNode('method_definition', methodCode), children: [ident] };
-    const result = extractSymbolInfo(node as any, methodCode, 'typescript', 'Calculator');
+    const result = extractSymbolInfo(node as any, methodCode, 'Calculator');
     expect(result!.kind).toBe('method');
     expect(result!.name).toBe('add');
   });
@@ -78,7 +78,7 @@ describe('extractSymbolInfo', () => {
     const ident = makeIdent('greet', 16);
     const funcNode = { type: 'function_declaration', startIndex: 7, endIndex: exportCode.length, children: [ident] };
     const exportNode = { type: 'export_statement', startIndex: 0, endIndex: exportCode.length, children: [funcNode] };
-    const result = extractSymbolInfo(exportNode as any, exportCode, 'typescript');
+    const result = extractSymbolInfo(exportNode as any, exportCode);
     expect(result).toBeTruthy();
     expect(result!.name).toBe('greet');
     expect(result!.kind).toBe('function');
@@ -86,19 +86,19 @@ describe('extractSymbolInfo', () => {
 
   it('returns undefined for unknown node type', () => {
     const node = makeNode('unknown_node', 'something');
-    expect(extractSymbolInfo(node as any, 'something', 'typescript')).toBeUndefined();
+    expect(extractSymbolInfo(node as any, 'something')).toBeUndefined();
   });
 
   it('returns undefined when no identifier found', () => {
     const node = makeNode('function_declaration', code);
-    expect(extractSymbolInfo(node as any, code, 'typescript')).toBeUndefined();
+    expect(extractSymbolInfo(node as any, code)).toBeUndefined();
   });
 
   it('truncates long signatures', () => {
     const longSig = 'function ' + 'a'.repeat(300) + '() {}';
     const ident = makeIdent('a'.repeat(300), 9);
     const node = { ...makeNode('function_declaration', longSig), children: [ident] };
-    const result = extractSymbolInfo(node as any, longSig, 'typescript');
+    const result = extractSymbolInfo(node as any, longSig);
     expect(result!.signature.length).toBeLessThanOrEqual(201); // 200 + '…'
   });
 });

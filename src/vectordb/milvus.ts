@@ -1,6 +1,7 @@
 import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from './types.js';
 import { VectorDBError } from '../errors.js';
 import { getConfig } from '../config.js';
+import { RRF_K } from './qdrant.js';
 
 let MilvusClient: any;
 let DataType: any;
@@ -22,8 +23,6 @@ async function loadMilvusSDK() {
     );
   }
 }
-
-const RRF_K = 60;
 
 /**
  * Detects the "data type 104 not supported" error from older Milvus versions

@@ -64,11 +64,4 @@ describe('StateManager', () => {
     expect(states.map(s => s.path).sort()).toEqual(['/a', '/b']);
   });
 
-  it('markExisting creates indexed state with unknown timestamp', () => {
-    const sm = new StateManager();
-    sm.markExisting('/existing', 'eidetic_existing');
-    const state = sm.getState('/existing');
-    expect(state!.status).toBe('indexed');
-    expect(state!.lastIndexed).toContain('pre-existing');
-  });
 });

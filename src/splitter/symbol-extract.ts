@@ -30,9 +30,6 @@ const KIND_MAP: Record<string, string> = {
   method_declaration: 'method',
   type_alias_declaration: 'type',
   enum_declaration: 'enum',
-  // Go
-  function_declaration_go: 'function',
-  method_declaration_go: 'method',
   // Java
   constructor_declaration: 'constructor',
   // Rust
@@ -65,7 +62,6 @@ function extractSignature(node: AstNode, code: string): string {
 export function extractSymbolInfo(
   node: AstNode,
   code: string,
-  _language: string,
   parentName?: string,
 ): SymbolInfo | undefined {
   const nodeType = node.type;
@@ -75,7 +71,7 @@ export function extractSymbolInfo(
     const declChild = node.children.find(c =>
       c.type !== 'export' && c.type !== 'default' && c.type !== ';' && c.type !== 'identifier',
     );
-    if (declChild) return extractSymbolInfo(declChild, code, _language, parentName);
+    if (declChild) return extractSymbolInfo(declChild, code, parentName);
     return undefined;
   }
 

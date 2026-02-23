@@ -3,10 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { previewCodebase } from '../preview.js';
-import { MockEmbedding } from '../../__tests__/mock-embedding.js';
 
 let tmpDir: string;
-const embedding = new MockEmbedding();
 
 function setup(files: Record<string, string>): string {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'eidetic-preview-'));
@@ -30,7 +28,7 @@ describe('previewCodebase', () => {
       'lib/c.js': 'var c = 3;',
     });
 
-    const result = await previewCodebase(tmpDir, embedding);
+    const result = await previewCodebase(tmpDir);
     expect(result.totalFiles).toBe(3);
     expect(result.byExtension['.ts']).toBe(2);
     expect(result.byExtension['.js']).toBe(1);
@@ -44,7 +42,7 @@ describe('previewCodebase', () => {
       'lib/d.js': 'd',
     });
 
-    const result = await previewCodebase(tmpDir, embedding);
+    const result = await previewCodebase(tmpDir);
     expect(result.topDirectories[0].dir).toBe('src');
     expect(result.topDirectories[0].count).toBe(3);
     expect(result.topDirectories[1].dir).toBe('lib');
@@ -55,7 +53,7 @@ describe('previewCodebase', () => {
     const content = 'x'.repeat(300); // 300 bytes → ~100 tokens (300/3)
     setup({ 'src/a.ts': content });
 
-    const result = await previewCodebase(tmpDir, embedding);
+    const result = await previewCodebase(tmpDir);
     expect(result.estimatedTokens).toBe(100);
     expect(result.estimatedCostUsd).toBeGreaterThan(0);
   });
@@ -63,7 +61,7 @@ describe('previewCodebase', () => {
   it('warns when no indexable files found', async () => {
     setup({}); // empty directory
 
-    const result = await previewCodebase(tmpDir, embedding);
+    const result = await previewCodebase(tmpDir);
     expect(result.totalFiles).toBe(0);
     expect(result.warnings).toContain('No indexable files found. Check file extension filters and ignore patterns.');
   });
@@ -78,7 +76,7 @@ describe('previewCodebase', () => {
       'src/e.ts': 'e',
     });
 
-    const result = await previewCodebase(tmpDir, embedding);
+    const result = await previewCodebase(tmpDir);
     const domWarning = result.warnings.find(w => w.includes('generated'));
     expect(domWarning).toBeDefined();
     expect(domWarning).toContain('80%');
@@ -90,7 +88,7 @@ describe('previewCodebase', () => {
       'src/b.dart': 'b',
     });
 
-    const result = await previewCodebase(tmpDir, embedding, ['.dart']);
+    const result = await previewCodebase(tmpDir, ['.dart']);
     expect(result.byExtension['.dart']).toBe(1);
   });
 
@@ -100,7 +98,7 @@ describe('previewCodebase', () => {
       'dist/b.js': 'b',
     });
 
-    const result = await previewCodebase(tmpDir, embedding, [], ['**/dist/**']);
+    const result = await previewCodebase(tmpDir, [], ['**/dist/**']);
     expect(result.totalFiles).toBe(1);
     expect(result.byExtension['.js']).toBeUndefined();
   });

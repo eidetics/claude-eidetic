@@ -16,6 +16,10 @@ import type { VectorDB } from './vectordb/types.js';
 import { textResult, formatCleanupResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults, formatMemoryActions, formatMemorySearchResults, formatMemoryList, formatMemoryHistory } from './format.js';
 import type { MemoryStore } from './memory/store.js';
 
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function resolvePath(args: Record<string, unknown>): string | undefined {
   const pathArg = args.path as string | undefined;
   if (pathArg) return normalizePath(pathArg);
@@ -82,10 +86,10 @@ export class ToolHandlers {
 
     if (dryRun) {
       try {
-        const preview = await previewCodebase(normalizedPath, this.embedding, customExt, customIgnore);
+        const preview = await previewCodebase(normalizedPath, customExt, customIgnore);
         return textResult(formatPreview(preview, normalizedPath));
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         return textResult(`Error previewing ${normalizedPath}: ${message}`);
       }
     }
@@ -108,7 +112,7 @@ export class ToolHandlers {
         registerProject(normalizedPath);
         return textResult(formatIndexResult(result, normalizedPath));
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         this.state.setError(normalizedPath, message);
         return textResult(`Error indexing ${normalizedPath}: ${message}`);
       }
@@ -141,7 +145,7 @@ export class ToolHandlers {
         : formatSearchResults(results, query, normalizedPath);
       return textResult(formatted);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error: ${message}`);
     }
   }
@@ -158,7 +162,7 @@ export class ToolHandlers {
         this.state.remove(normalizedPath);
         return textResult(`Index cleared for ${normalizedPath}.`);
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         return textResult(`Error clearing index: ${message}`);
       }
     });
@@ -234,7 +238,7 @@ export class ToolHandlers {
         );
         return textResult(formatCleanupResult(result, normalizedPath, false));
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         return textResult(`Error during cleanup: ${message}`);
       }
     });
@@ -259,7 +263,7 @@ export class ToolHandlers {
       const result = await indexDocument(content, source, library, topic, this.embedding, this.vectordb, ttlDays);
       return textResult(formatDocIndexResult(result));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error caching documentation: ${message}`);
     }
   }
@@ -278,7 +282,7 @@ export class ToolHandlers {
       const results = await searchDocuments(query, this.embedding, this.vectordb, { library, limit });
       return textResult(formatDocSearchResults(results, query));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error: ${message}`);
     }
   }
@@ -295,7 +299,7 @@ export class ToolHandlers {
       const actions = await this.memoryStore.addMemory(content, source);
       return textResult(formatMemoryActions(actions));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error adding memory: ${message}`);
     }
   }
@@ -313,7 +317,7 @@ export class ToolHandlers {
       const results = await this.memoryStore.searchMemory(query, limit, category);
       return textResult(formatMemorySearchResults(results, query));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error searching memories: ${message}`);
     }
   }
@@ -328,7 +332,7 @@ export class ToolHandlers {
       const results = await this.memoryStore.listMemories(category, limit);
       return textResult(formatMemoryList(results));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error listing memories: ${message}`);
     }
   }
@@ -344,7 +348,7 @@ export class ToolHandlers {
       if (!deleted) return textResult(`Memory not found: ${id}`);
       return textResult(`Memory deleted: ${id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error deleting memory: ${message}`);
     }
   }
@@ -359,7 +363,7 @@ export class ToolHandlers {
       const entries = this.memoryStore.getHistory(id);
       return textResult(formatMemoryHistory(entries, id));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error retrieving memory history: ${message}`);
     }
   }
@@ -377,7 +381,7 @@ export class ToolHandlers {
       const map = await generateRepoMap(normalizedPath, source, { pathFilter, kindFilter, maxTokens });
       return textResult(map);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error: ${message}`);
     }
   }
@@ -395,7 +399,7 @@ export class ToolHandlers {
       const table = await listSymbolsTable(normalizedPath, source, { pathFilter, kindFilter, nameFilter });
       return textResult(table);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = getErrorMessage(err);
       return textResult(`Error: ${message}`);
     }
   }
@@ -427,7 +431,7 @@ export async function handleReadFile(args: Record<string, unknown>): Promise<{ c
     if (nodeErr.code === 'ENOENT') return textResult(`Error: File not found: ${filePath}`);
     if (nodeErr.code === 'EACCES' || nodeErr.code === 'EPERM') return textResult(`Error: Permission denied: ${filePath}`);
     if (nodeErr.code === 'EISDIR') return textResult(`Error: Path is a directory, not a file: ${filePath}`);
-    const message = err instanceof Error ? err.message : String(err);
+    const message = getErrorMessage(err);
     return textResult(`Error reading file: ${message}`);
   }
 

@@ -36,18 +36,6 @@ export function loadGroundTruth(): GroundTruth {
   return data;
 }
 
-export function identifierQueries(gt = loadGroundTruth()): EvalQuery[] {
-  return gt.queries.filter(q => q.type === 'identifier');
-}
-
-export function naturalQueries(gt = loadGroundTruth()): EvalQuery[] {
-  return gt.queries.filter(q => q.type === 'natural');
-}
-
-export function handQueries(gt = loadGroundTruth()): EvalQuery[] {
-  return gt.queries.filter(q => q.source === 'hand');
-}
-
 export function allQueryTexts(gt = loadGroundTruth()): string[] {
   return gt.queries.map(q => q.text);
 }
