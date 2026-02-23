@@ -14,6 +14,17 @@ export interface PreCompactInput {
 }
 
 /**
+ * Input received from Claude Code SessionEnd hook via stdin.
+ */
+export interface SessionEndInput {
+  session_id: string;
+  transcript_path: string;
+  cwd: string;
+  hook_event_name: 'SessionEnd';
+  reason?: string;
+}
+
+/**
  * Session data extracted from transcript JSONL.
  * Contains deterministic data parsed directly from tool calls.
  */
@@ -30,7 +41,7 @@ export interface ExtractedSession {
   tasksCreated: string[];
   tasksUpdated: string[];
   userMessages: string[];
-  trigger: 'auto' | 'manual';
+  trigger: 'auto' | 'manual' | 'session_end';
 }
 
 /**
@@ -43,7 +54,7 @@ export interface Tier0Record {
   branch: string | null;
   filesModified: string[];
   tasksCreated: string[];
-  trigger: 'auto' | 'manual';
+  trigger: 'auto' | 'manual' | 'session_end';
   noteFile: string;
 }
 
