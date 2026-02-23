@@ -4,7 +4,6 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
 import { getConfig } from '../config.js';
 import { normalizePath } from '../paths.js';
 
@@ -16,7 +15,7 @@ export function extractDate(timestamp: string): string {
     return new Date().toISOString().slice(0, 10);
   }
   // Handle ISO format: 2026-02-19T10:00:00Z
-  const match = timestamp.match(/^(\d{4}-\d{2}-\d{2})/);
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(timestamp);
   if (match) {
     return match[1];
   }
@@ -43,7 +42,7 @@ export function truncateUnicode(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
 
   // Convert to array of code points to handle surrogate pairs correctly
-  const codePoints = [...str];
+  const codePoints = Array.from(str);
   if (codePoints.length <= maxLength) return str;
 
   // Leave room for ellipsis
@@ -97,7 +96,7 @@ function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash).toString(36);

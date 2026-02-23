@@ -26,9 +26,12 @@ describe('formatTier0Context', () => {
   });
 
   it('truncates file list with count when > 5', () => {
-    const output = formatTier0Context(makeSession({
-      filesModified: ['/a.ts', '/b.ts', '/c.ts', '/d.ts', '/e.ts', '/f.ts', '/g.ts'],
-    }), 1);
+    const output = formatTier0Context(
+      makeSession({
+        filesModified: ['/a.ts', '/b.ts', '/c.ts', '/d.ts', '/e.ts', '/f.ts', '/g.ts'],
+      }),
+      1,
+    );
     expect(output).toContain('(+2 more)');
   });
 

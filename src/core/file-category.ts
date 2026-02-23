@@ -28,7 +28,7 @@ export function classifyFileCategory(relativePath: string): FileCategory {
   const ext = filename.includes('.') ? filename.slice(filename.lastIndexOf('.')).toLowerCase() : '';
   if (
     ['.md', '.mdx', '.rst', '.txt'].includes(ext) ||
-    segments.some(s => s.toLowerCase() === 'docs' || s.toLowerCase() === 'doc') ||
+    segments.some((s) => s.toLowerCase() === 'docs' || s.toLowerCase() === 'doc') ||
     /^readme/i.test(filename) ||
     /^changelog/i.test(filename) ||
     /^license/i.test(filename)
@@ -38,9 +38,12 @@ export function classifyFileCategory(relativePath: string): FileCategory {
 
   // generated
   if (
-    lower.includes('/dist/') || lower.startsWith('dist/') ||
-    lower.includes('/build/') || lower.startsWith('build/') ||
-    lower.includes('/generated/') || lower.startsWith('generated/') ||
+    lower.includes('/dist/') ||
+    lower.startsWith('dist/') ||
+    lower.includes('/build/') ||
+    lower.startsWith('build/') ||
+    lower.includes('/generated/') ||
+    lower.startsWith('generated/') ||
     lower.includes('.generated.') ||
     /\.[gG]\./.test(filename)
   ) {
@@ -55,7 +58,12 @@ export function classifyFileCategory(relativePath: string): FileCategory {
   return 'source';
 }
 
-function isConfigFile(normalized: string, filename: string, ext: string, segments: string[]): boolean {
+function isConfigFile(
+  normalized: string,
+  filename: string,
+  ext: string,
+  segments: string[],
+): boolean {
   const filenameLower = filename.toLowerCase();
 
   // Explicit filename matches
@@ -63,16 +71,16 @@ function isConfigFile(normalized: string, filename: string, ext: string, segment
   if (filenameLower === 'makefile') return true;
   if (filenameLower === 'dockerfile') return true;
   if (/^tsconfig.*\.json$/.test(filenameLower)) return true;
-  if (/^docker-compose/.test(filenameLower)) return true;
-  if (/^\.eslintrc/.test(filenameLower)) return true;
-  if (/^\.prettierrc/.test(filenameLower)) return true;
+  if (filenameLower.startsWith('docker-compose')) return true;
+  if (filenameLower.startsWith('.eslintrc')) return true;
+  if (filenameLower.startsWith('.prettierrc')) return true;
 
   // *.config.* pattern
-  if (/\.config\./.test(filename)) return true;
+  if (filename.includes('.config.')) return true;
 
   // .yaml/.yml/.toml not under src/
   if (['.yaml', '.yml', '.toml'].includes(ext)) {
-    const underSrc = segments.some(s => s.toLowerCase() === 'src');
+    const underSrc = segments.some((s) => s.toLowerCase() === 'src');
     if (!underSrc) return true;
   }
 

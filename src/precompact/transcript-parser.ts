@@ -21,7 +21,7 @@ export async function parseTranscript(
   sessionId: string,
   projectName: string,
   projectPath: string,
-  trigger: 'auto' | 'manual' | 'session_end' = 'auto'
+  trigger: 'auto' | 'manual' | 'session_end' = 'auto',
 ): Promise<ExtractedSession> {
   const filesModified = new Set<string>();
   const bashCommands: string[] = [];
@@ -76,7 +76,11 @@ export async function parseTranscript(
       for (const content of parsed.message.content) {
         if (content.type !== 'tool_use') continue;
 
-        const toolContent = content as { type: 'tool_use'; name: string; input: Record<string, unknown> };
+        const toolContent = content as {
+          type: 'tool_use';
+          name: string;
+          input: Record<string, unknown>;
+        };
         processToolCall(toolContent, {
           filesModified,
           bashCommands,
@@ -117,7 +121,7 @@ interface ExtractState {
 
 function processToolCall(
   content: { type: 'tool_use'; name: string; input: Record<string, unknown> },
-  state: ExtractState
+  state: ExtractState,
 ): void {
   const { name, input } = content;
 

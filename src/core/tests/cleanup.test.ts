@@ -53,9 +53,7 @@ describe('cleanupVectors', () => {
     mockLoadSnapshot.mockReturnValue(null);
 
     const vectordb = makeVectorDB();
-    await expect(cleanupVectors('/test/root', vectordb)).rejects.toThrow(
-      'No snapshot found',
-    );
+    await expect(cleanupVectors('/test/root', vectordb)).rejects.toThrow('No snapshot found');
   });
 
   it('calls deleteByPath for each removed file', async () => {
@@ -148,7 +146,9 @@ describe('cleanupVectors', () => {
 
     const vectordb = makeVectorDB();
     const progressCalls: [number, string][] = [];
-    const onProgress = (pct: number, msg: string) => { progressCalls.push([pct, msg]); };
+    const onProgress = (pct: number, msg: string) => {
+      progressCalls.push([pct, msg]);
+    };
 
     await cleanupVectors('/test/root', vectordb, onProgress);
 

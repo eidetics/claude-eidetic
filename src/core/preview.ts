@@ -54,13 +54,17 @@ export async function previewCodebase(
     warnings.push('No indexable files found. Check file extension filters and ignore patterns.');
   }
   if (filePaths.length > 5000) {
-    warnings.push(`Found ${filePaths.length.toLocaleString()} files. Most codebases have 100-5,000 source files. Consider adding ignore patterns.`);
+    warnings.push(
+      `Found ${filePaths.length.toLocaleString()} files. Most codebases have 100-5,000 source files. Consider adding ignore patterns.`,
+    );
   }
   if (topDirectories.length > 0 && filePaths.length > 0) {
     const topDir = topDirectories[0];
     const pct = Math.round((topDir.count / filePaths.length) * 100);
     if (pct > 50 && topDir.dir !== '(root)') {
-      warnings.push(`Directory '${topDir.dir}/' contains ${pct}% of files -- consider ignoring if it contains build artifacts or dependencies.`);
+      warnings.push(
+        `Directory '${topDir.dir}/' contains ${pct}% of files -- consider ignoring if it contains build artifacts or dependencies.`,
+      );
     }
   }
 

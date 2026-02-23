@@ -22,7 +22,7 @@ export async function bootstrapQdrant(): Promise<string> {
   if (!isDockerAvailable()) {
     throw new BootstrapError(
       `Qdrant not reachable at ${url} and Docker not found.\n` +
-      `Either: (a) install Docker and retry, or (b) set QDRANT_URL to your Qdrant instance.`,
+        `Either: (a) install Docker and retry, or (b) set QDRANT_URL to your Qdrant instance.`,
     );
   }
 
@@ -36,22 +36,32 @@ export async function bootstrapQdrant(): Promise<string> {
   } else {
     const dataDir = path.join(getDataDir(), 'qdrant-data').replace(/\\/g, '/');
     console.log(`Creating new Qdrant container "${CONTAINER_NAME}"...`);
-    execFileSync('docker', [
-      'run', '-d',
-      '--name', CONTAINER_NAME,
-      '--restart', 'unless-stopped',
-      '-p', '6333:6333',
-      '-p', '6334:6334',
-      '-v', `${dataDir}:/qdrant/storage`,
-      'qdrant/qdrant',
-    ], { stdio: 'pipe' });
+    execFileSync(
+      'docker',
+      [
+        'run',
+        '-d',
+        '--name',
+        CONTAINER_NAME,
+        '--restart',
+        'unless-stopped',
+        '-p',
+        '6333:6333',
+        '-p',
+        '6334:6334',
+        '-v',
+        `${dataDir}:/qdrant/storage`,
+        'qdrant/qdrant',
+      ],
+      { stdio: 'pipe' },
+    );
   }
 
   const healthy = await waitForHealth(url, HEALTH_TIMEOUT_MS);
   if (!healthy) {
     throw new BootstrapError(
       `Qdrant container started but failed health check after ${HEALTH_TIMEOUT_MS / 1000}s. ` +
-      `Check: docker logs ${CONTAINER_NAME}`,
+        `Check: docker logs ${CONTAINER_NAME}`,
     );
   }
 
@@ -79,11 +89,11 @@ function isDockerAvailable(): boolean {
 
 function getContainerState(): 'running' | 'stopped' | 'none' {
   try {
-    const output = execFileSync('docker', [
-      'ps', '-a',
-      '--filter', `name=^/${CONTAINER_NAME}$`,
-      '--format', '{{.State}}',
-    ], { encoding: 'utf-8', stdio: 'pipe' }).trim();
+    const output = execFileSync(
+      'docker',
+      ['ps', '-a', '--filter', `name=^/${CONTAINER_NAME}$`, '--format', '{{.State}}'],
+      { encoding: 'utf-8', stdio: 'pipe' },
+    ).trim();
 
     if (!output) return 'none';
     if (output === 'running') return 'running';
@@ -97,7 +107,7 @@ async function waitForHealth(url: string, timeoutMs: number): Promise<boolean> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     if (await isQdrantHealthy(url)) return true;
-    await new Promise(r => setTimeout(r, HEALTH_POLL_MS));
+    await new Promise((r) => setTimeout(r, HEALTH_POLL_MS));
   }
   return false;
 }

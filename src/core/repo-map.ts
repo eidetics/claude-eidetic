@@ -14,32 +14,38 @@ export interface ListSymbolsOptions {
 }
 
 export interface SymbolSource {
-  getSymbols(collectionName: string, options?: RepoMapOptions | ListSymbolsOptions): Promise<SymbolEntry[]>;
+  getSymbols(
+    collectionName: string,
+    options?: RepoMapOptions | ListSymbolsOptions,
+  ): Promise<SymbolEntry[]>;
 }
 
 export class VectorDBSymbolSource implements SymbolSource {
   constructor(private vectordb: VectorDB) {}
 
-  async getSymbols(collectionName: string, options?: RepoMapOptions | ListSymbolsOptions): Promise<SymbolEntry[]> {
+  async getSymbols(
+    collectionName: string,
+    options?: RepoMapOptions | ListSymbolsOptions,
+  ): Promise<SymbolEntry[]> {
     const all = await this.vectordb.listSymbols(collectionName);
 
     let result = all;
 
     const pathFilter = (options as RepoMapOptions | undefined)?.pathFilter;
     if (pathFilter) {
-      result = result.filter(s => matchesPathFilter(s.relativePath, pathFilter));
+      result = result.filter((s) => matchesPathFilter(s.relativePath, pathFilter));
     }
 
     const kindFilter = (options as RepoMapOptions | undefined)?.kindFilter;
     if (kindFilter) {
       const kind = kindFilter.toLowerCase();
-      result = result.filter(s => s.kind.toLowerCase() === kind);
+      result = result.filter((s) => s.kind.toLowerCase() === kind);
     }
 
     const nameFilter = (options as ListSymbolsOptions | undefined)?.nameFilter;
     if (nameFilter) {
       const lower = nameFilter.toLowerCase();
-      result = result.filter(s => s.name.toLowerCase().includes(lower));
+      result = result.filter((s) => s.name.toLowerCase().includes(lower));
     }
 
     return result;
@@ -54,9 +60,9 @@ export function matchesPathFilter(relativePath: string, pattern: string): boolea
   // Escape regex special chars except * which we handle
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '\x00') // placeholder for **
+    .replace(/\*\*/g, '\uFFFD') // placeholder for **
     .replace(/\*/g, '[^/]*')
-    .replace(/\x00/g, '.*');
+    .replace(/\uFFFD/g, '.*');
   const regex = new RegExp(`^${escaped}$`);
   return regex.test(relativePath);
 }
@@ -111,18 +117,20 @@ export async function generateRepoMap(
   let totalChars = 0;
 
   for (const file of files) {
-    const fileSymbols = byFile.get(file)!;
+    const fileSymbols = byFile.get(file) ?? [];
 
     // Separate top-level from methods (those with a parentName)
-    const topLevel = fileSymbols.filter(s => !s.parentName);
-    const methods = fileSymbols.filter(s => s.parentName);
+    const topLevel = fileSymbols.filter((s) => !s.parentName);
+    const methods = fileSymbols.filter(
+      (s): s is SymbolEntry & { parentName: string } => s.parentName !== undefined,
+    );
 
     // Build method lookup by parent
     const methodsByParent = new Map<string, SymbolEntry[]>();
     for (const m of methods) {
-      const list = methodsByParent.get(m.parentName!) ?? [];
+      const list = methodsByParent.get(m.parentName) ?? [];
       list.push(m);
-      methodsByParent.set(m.parentName!, list);
+      methodsByParent.set(m.parentName, list);
     }
 
     const fileHeader = `${file}:`;
@@ -182,7 +190,7 @@ export async function listSymbolsTable(
 
   const header = 'Name | Kind | Location';
   const sep = '-----|------|--------';
-  const rows = deduped.map(s => {
+  const rows = deduped.map((s) => {
     const location = `${s.relativePath}:${s.startLine}`;
     return `${s.name} | ${s.kind} | ${location}`;
   });

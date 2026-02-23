@@ -24,7 +24,7 @@ export async function indexDocument(
   topic: string,
   embedding: Embedding,
   vectordb: VectorDB,
-  ttlDays: number = 7,
+  ttlDays = 7,
 ): Promise<DocIndexResult> {
   const start = Date.now();
 
@@ -62,7 +62,7 @@ export async function indexDocument(
 
   for (let i = 0; i < chunks.length; i += batchSize) {
     const batch = chunks.slice(i, i + batchSize);
-    const texts = batch.map(c => c.content);
+    const texts = batch.map((c) => c.content);
 
     const estimation = embedding.estimateTokens(texts);
     totalTokens += estimation.estimatedTokens;

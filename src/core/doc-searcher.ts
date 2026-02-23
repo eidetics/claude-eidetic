@@ -32,13 +32,11 @@ export async function searchDocuments(
 
   if (options.library) {
     const collection = docCollectionName(options.library);
-    const entries = Object.values(metadata).filter(
-      e => e.collectionName === collection,
-    );
+    const entries = Object.values(metadata).filter((e) => e.collectionName === collection);
     if (entries.length === 0) {
       throw new SearchError(
         `No cached documentation found for library "${options.library}". ` +
-        `Use index_document to cache documentation first.`,
+          `Use index_document to cache documentation first.`,
       );
     }
     collectionsToSearch = [{ collection, entries }];
@@ -75,7 +73,7 @@ export async function searchDocuments(
     });
 
     for (const r of results) {
-      const matchingEntry = entries.find(e => e.source === r.relativePath);
+      const matchingEntry = entries.find((e) => e.source === r.relativePath);
       allResults.push({
         ...r,
         library: matchingEntry?.library ?? 'unknown',
@@ -89,5 +87,5 @@ export async function searchDocuments(
   allResults.sort((a, b) => b.score - a.score);
   const deduped = deduplicateResults(allResults, limit);
 
-  return deduped.map(r => r as DocSearchResult);
+  return deduped.map((r) => r as DocSearchResult);
 }

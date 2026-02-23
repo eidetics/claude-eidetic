@@ -1,4 +1,10 @@
-import type { VectorDB, CodeDocument, HybridSearchParams, SearchResult, SymbolEntry } from '../vectordb/types.js';
+import type {
+  VectorDB,
+  CodeDocument,
+  HybridSearchParams,
+  SearchResult,
+  SymbolEntry,
+} from '../vectordb/types.js';
 
 export interface VectorDBCall {
   method: string;
@@ -41,19 +47,19 @@ export class MockVectorDB implements VectorDB {
     if (!col) return [];
 
     const query = params.queryText.toLowerCase();
-    const terms = query.split(/\s+/).filter(t => t.length > 0);
+    const terms = query.split(/\s+/).filter((t) => t.length > 0);
 
     let docs = col.documents;
 
     // Apply extension filter
     if (params.extensionFilter?.length) {
-      docs = docs.filter(d => params.extensionFilter!.includes(d.fileExtension));
+      docs = docs.filter((d) => params.extensionFilter!.includes(d.fileExtension));
     }
 
     // Score by term match count
-    const scored = docs.map(doc => {
+    const scored = docs.map((doc) => {
       const content = doc.content.toLowerCase();
-      const hits = terms.filter(t => content.includes(t)).length;
+      const hits = terms.filter((t) => content.includes(t)).length;
       return { doc, score: hits / Math.max(terms.length, 1) };
     });
 
@@ -70,12 +76,15 @@ export class MockVectorDB implements VectorDB {
     }));
   }
 
-  async getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
+  async getById(
+    name: string,
+    id: string,
+  ): Promise<{ payload: Record<string, unknown>; vector: number[] } | null> {
     this.calls.push({ method: 'getById', args: [name, id] });
     const col = this.collections.get(name);
     if (!col) return null;
     // Search by document id or by relativePath (memory stores UUID in relativePath)
-    const doc = col.documents.find(d => d.id === id || d.relativePath === id);
+    const doc = col.documents.find((d) => d.id === id || d.relativePath === id);
     if (!doc) return null;
     return {
       payload: {
@@ -92,13 +101,18 @@ export class MockVectorDB implements VectorDB {
     };
   }
 
-  async updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
+  async updatePoint(
+    name: string,
+    id: string,
+    vector: number[],
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     this.calls.push({ method: 'updatePoint', args: [name, id, vector, payload] });
     const col = this.collections.get(name);
     if (!col) throw new Error(`Collection "${name}" does not exist`);
 
     // Remove existing point with same id (by relativePath for memories, or by id)
-    col.documents = col.documents.filter(d => d.id !== id && d.relativePath !== id);
+    col.documents = col.documents.filter((d) => d.id !== id && d.relativePath !== id);
 
     // Insert the updated point
     col.documents.push({
@@ -119,7 +133,7 @@ export class MockVectorDB implements VectorDB {
     this.calls.push({ method: 'deleteByPath', args: [name, relativePath] });
     const col = this.collections.get(name);
     if (!col) return;
-    col.documents = col.documents.filter(d => d.relativePath !== relativePath);
+    col.documents = col.documents.filter((d) => d.relativePath !== relativePath);
   }
 
   async listSymbols(name: string): Promise<SymbolEntry[]> {
@@ -128,8 +142,8 @@ export class MockVectorDB implements VectorDB {
     if (!col) return [];
 
     return col.documents
-      .filter(d => d.symbolName)
-      .map(d => ({
+      .filter((d) => d.symbolName)
+      .map((d) => ({
         name: d.symbolName!,
         kind: d.symbolKind ?? '',
         relativePath: d.relativePath,

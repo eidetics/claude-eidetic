@@ -50,7 +50,15 @@ export interface VectorDB {
   insert(name: string, documents: CodeDocument[]): Promise<void>;
   search(name: string, params: HybridSearchParams): Promise<SearchResult[]>;
   deleteByPath(name: string, relativePath: string): Promise<void>;
-  getById(name: string, id: string): Promise<{ payload: Record<string, unknown>; vector: number[] } | null>;
-  updatePoint(name: string, id: string, vector: number[], payload: Record<string, unknown>): Promise<void>;
+  getById(
+    name: string,
+    id: string,
+  ): Promise<{ payload: Record<string, unknown>; vector: number[] } | null>;
+  updatePoint(
+    name: string,
+    id: string,
+    vector: number[],
+    payload: Record<string, unknown>,
+  ): Promise<void>;
   listSymbols(name: string): Promise<SymbolEntry[]>;
 }

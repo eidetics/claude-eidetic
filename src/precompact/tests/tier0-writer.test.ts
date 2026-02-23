@@ -40,13 +40,23 @@ describe('updateSessionIndex', () => {
     tmpDir = createTempCodebase({
       '.session-index.json': JSON.stringify({
         project: 'proj',
-        sessions: [{ sessionId: 'old', date: '2026-02-18', branch: 'main', filesModified: [], tasksCreated: [], trigger: 'auto', noteFile: '/old.md' }],
+        sessions: [
+          {
+            sessionId: 'old',
+            date: '2026-02-18',
+            branch: 'main',
+            filesModified: [],
+            tasksCreated: [],
+            trigger: 'auto',
+            noteFile: '/old.md',
+          },
+        ],
         lastUpdated: '',
       }),
     });
     updateSessionIndex(tmpDir, makeSession('new'), '/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     expect(index.sessions[0].sessionId).toBe('new');
     expect(index.sessions[1].sessionId).toBe('old');
@@ -71,7 +81,7 @@ describe('updateSessionIndex', () => {
     });
     updateSessionIndex(tmpDir, makeSession('newest'), '/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     expect(index.sessions).toHaveLength(10);
     expect(index.sessions[0].sessionId).toBe('newest');
@@ -81,7 +91,7 @@ describe('updateSessionIndex', () => {
     tmpDir = createTempCodebase({});
     updateSessionIndex(tmpDir, makeSession('sess1'), '/path/to/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     const record = index.sessions[0];
     expect(record).toHaveProperty('sessionId', 'sess1');
@@ -98,10 +108,10 @@ describe('updateSessionIndex', () => {
     const before = new Date().toISOString();
     updateSessionIndex(tmpDir, makeSession('sess1'), '/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     expect(new Date(index.lastUpdated).getTime()).toBeGreaterThanOrEqual(
-      new Date(before).getTime()
+      new Date(before).getTime(),
     );
   });
 
@@ -109,7 +119,7 @@ describe('updateSessionIndex', () => {
     tmpDir = createTempCodebase({});
     updateSessionIndex(tmpDir, makeSession('sess1', { projectName: 'my-proj' }), '/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     expect(index.project).toBe('my-proj');
   });
@@ -118,7 +128,7 @@ describe('updateSessionIndex', () => {
     tmpDir = createTempCodebase({});
     updateSessionIndex(tmpDir, makeSession('sess1', { branch: null }), '/note.md');
     const index: SessionIndex = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8')
+      fs.readFileSync(path.join(tmpDir, '.session-index.json'), 'utf-8'),
     );
     expect(index.sessions[0].branch).toBeNull();
   });

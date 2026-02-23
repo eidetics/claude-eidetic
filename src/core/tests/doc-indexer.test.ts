@@ -68,9 +68,16 @@ The useContext hook lets you read context from a provider.`;
   });
 
   it('creates collection if it does not exist', async () => {
-    await indexDocument(sampleContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
+    await indexDocument(
+      sampleContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
 
-    const createCalls = vectordb.calls.filter(c => c.method === 'createCollection');
+    const createCalls = vectordb.calls.filter((c) => c.method === 'createCollection');
     expect(createCalls).toHaveLength(1);
     expect(createCalls[0].args[0]).toBe('doc_react');
   });
@@ -79,27 +86,55 @@ The useContext hook lets you read context from a provider.`;
     await vectordb.createCollection('doc_react', 32);
     vectordb.calls.length = 0;
 
-    await indexDocument(sampleContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
+    await indexDocument(
+      sampleContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
 
-    const createCalls = vectordb.calls.filter(c => c.method === 'createCollection');
+    const createCalls = vectordb.calls.filter((c) => c.method === 'createCollection');
     expect(createCalls).toHaveLength(0);
   });
 
   it('deletes old chunks for same source on refresh', async () => {
-    await indexDocument(sampleContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
+    await indexDocument(
+      sampleContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
 
     const firstChunkCount = vectordb.collections.get('doc_react')!.documents.length;
 
-    await indexDocument(sampleContent + '\n\n## useMemo\nMemoize values.', 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
+    await indexDocument(
+      sampleContent + '\n\n## useMemo\nMemoize values.',
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
 
-    const deleteCalls = vectordb.calls.filter(c => c.method === 'deleteByPath');
+    const deleteCalls = vectordb.calls.filter((c) => c.method === 'deleteByPath');
     expect(deleteCalls.length).toBeGreaterThanOrEqual(1);
     // Should have new chunks after delete + re-insert
     expect(vectordb.collections.get('doc_react')!.documents.length).toBeGreaterThan(0);
   });
 
   it('stores documents with markdown language and .md extension', async () => {
-    await indexDocument(sampleContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb);
+    await indexDocument(
+      sampleContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+    );
 
     const docs = vectordb.collections.get('doc_react')!.documents;
     for (const doc of docs) {
@@ -110,7 +145,15 @@ The useContext hook lets you read context from a provider.`;
   });
 
   it('saves metadata to doc-metadata.json', async () => {
-    await indexDocument(sampleContent, 'https://react.dev/hooks', 'react', 'hooks', embedding, vectordb, 14);
+    await indexDocument(
+      sampleContent,
+      'https://react.dev/hooks',
+      'react',
+      'hooks',
+      embedding,
+      vectordb,
+      14,
+    );
 
     const metadataPath = path.join(tmpDir, 'doc-metadata.json');
     expect(fs.existsSync(metadataPath)).toBe(true);

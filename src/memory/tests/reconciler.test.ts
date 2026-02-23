@@ -51,13 +51,15 @@ describe('cosineSimilarity', () => {
 describe('reconcile', () => {
   it('returns NONE for exact hash match', () => {
     const hash = hashMemory('I use Vitest');
-    const candidates: ExistingMatch[] = [{
-      id: 'abc',
-      memory: 'I use Vitest',
-      hash,
-      vector: [1, 0, 0],
-      score: 0.95,
-    }];
+    const candidates: ExistingMatch[] = [
+      {
+        id: 'abc',
+        memory: 'I use Vitest',
+        hash,
+        vector: [1, 0, 0],
+        score: 0.95,
+      },
+    ];
 
     const result = reconcile(hash, [1, 0, 0], candidates);
     expect(result.action).toBe('NONE');
@@ -71,13 +73,15 @@ describe('reconcile', () => {
     const newVector = [0.9, 0.1, 0.05];
     const existingVector = [0.91, 0.09, 0.04];
 
-    const candidates: ExistingMatch[] = [{
-      id: 'xyz',
-      memory: 'I use Vitest for testing',
-      hash: existingHash,
-      vector: existingVector,
-      score: 0.95,
-    }];
+    const candidates: ExistingMatch[] = [
+      {
+        id: 'xyz',
+        memory: 'I use Vitest for testing',
+        hash: existingHash,
+        vector: existingVector,
+        score: 0.95,
+      },
+    ];
 
     const result = reconcile(newHash, newVector, candidates);
     expect(result.action).toBe('UPDATE');
@@ -92,13 +96,15 @@ describe('reconcile', () => {
     const newVector = [1, 0, 0];
     const existingVector = [0, 0, 1];
 
-    const candidates: ExistingMatch[] = [{
-      id: 'old',
-      memory: 'I use React for frontend',
-      hash: existingHash,
-      vector: existingVector,
-      score: 0.3,
-    }];
+    const candidates: ExistingMatch[] = [
+      {
+        id: 'old',
+        memory: 'I use React for frontend',
+        hash: existingHash,
+        vector: existingVector,
+        score: 0.3,
+      },
+    ];
 
     const result = reconcile(newHash, newVector, candidates);
     expect(result.action).toBe('ADD');
@@ -111,13 +117,15 @@ describe('reconcile', () => {
 
   it('checks hash before similarity', () => {
     const hash = hashMemory('same text');
-    const candidates: ExistingMatch[] = [{
-      id: 'first',
-      memory: 'same text',
-      hash,
-      vector: [0, 0, 1], // completely different vector
-      score: 0.1,
-    }];
+    const candidates: ExistingMatch[] = [
+      {
+        id: 'first',
+        memory: 'same text',
+        hash,
+        vector: [0, 0, 1], // completely different vector
+        score: 0.1,
+      },
+    ];
 
     // Even with a totally different vector, hash match should win
     const result = reconcile(hash, [1, 0, 0], candidates);

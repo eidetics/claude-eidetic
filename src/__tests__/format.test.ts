@@ -80,15 +80,22 @@ describe('formatIndexResult', () => {
     const output = formatIndexResult(baseResult, '/test');
     // The metric line "Parse failures: 0" exists, but the detailed list section should not
     const lines = output.split('\n');
-    const failureListLines = lines.filter(l => l.startsWith('- ') || l === 'Parse failures:');
+    const failureListLines = lines.filter((l) => l.startsWith('- ') || l === 'Parse failures:');
     expect(failureListLines).toEqual([]);
   });
 
   it('handles zero values', () => {
     const result: IndexResult = {
-      totalFiles: 0, totalChunks: 0, addedFiles: 0, modifiedFiles: 0,
-      removedFiles: 0, skippedFiles: 0, parseFailures: [],
-      estimatedTokens: 0, estimatedCostUsd: 0, durationMs: 0,
+      totalFiles: 0,
+      totalChunks: 0,
+      addedFiles: 0,
+      modifiedFiles: 0,
+      removedFiles: 0,
+      skippedFiles: 0,
+      parseFailures: [],
+      estimatedTokens: 0,
+      estimatedCostUsd: 0,
+      durationMs: 0,
     };
     const output = formatIndexResult(result, '/empty');
     expect(output).toContain('Total files:    0');
@@ -179,7 +186,10 @@ describe('formatPreview', () => {
 
   it('handles empty extension map', () => {
     const preview: PreviewResult = {
-      ...basePreview, totalFiles: 0, byExtension: {}, topDirectories: [],
+      ...basePreview,
+      totalFiles: 0,
+      byExtension: {},
+      topDirectories: [],
     };
     const output = formatPreview(preview, '/empty');
     expect(output).toContain('Total: 0 files');
@@ -188,7 +198,8 @@ describe('formatPreview', () => {
 
   it('handles single extension', () => {
     const preview: PreviewResult = {
-      ...basePreview, byExtension: { '.rs': 42 },
+      ...basePreview,
+      byExtension: { '.rs': 42 },
     };
     const output = formatPreview(preview, '/rust');
     expect(output).toContain('.rs');
@@ -206,7 +217,14 @@ describe('formatListIndexed', () => {
   it('shows project name from registry', () => {
     vi.mocked(listProjects).mockReturnValue({ myproject: '/test/path' });
     const states: CodebaseState[] = [
-      { path: '/test/path', collectionName: 'test_path', status: 'indexed', totalFiles: 10, totalChunks: 50, lastIndexed: '2024-01-01' },
+      {
+        path: '/test/path',
+        collectionName: 'test_path',
+        status: 'indexed',
+        totalFiles: 10,
+        totalChunks: 50,
+        lastIndexed: '2024-01-01',
+      },
     ];
     const output = formatListIndexed(states);
     expect(output).toContain('myproject');
@@ -216,7 +234,14 @@ describe('formatListIndexed', () => {
   it('does not contain markdown syntax', () => {
     vi.mocked(listProjects).mockReturnValue({});
     const states: CodebaseState[] = [
-      { path: '/test/path', collectionName: 'test_path', status: 'indexed', totalFiles: 10, totalChunks: 50, lastIndexed: '2024-01-01' },
+      {
+        path: '/test/path',
+        collectionName: 'test_path',
+        status: 'indexed',
+        totalFiles: 10,
+        totalChunks: 50,
+        lastIndexed: '2024-01-01',
+      },
     ];
     const output = formatListIndexed(states);
     expect(output).not.toContain('**');
@@ -227,7 +252,14 @@ describe('formatListIndexed', () => {
   it('shows status, files, chunks as aligned key-value pairs', () => {
     vi.mocked(listProjects).mockReturnValue({});
     const states: CodebaseState[] = [
-      { path: '/test/path', collectionName: 'test_path', status: 'indexed', totalFiles: 10, totalChunks: 50, lastIndexed: '2024-01-01' },
+      {
+        path: '/test/path',
+        collectionName: 'test_path',
+        status: 'indexed',
+        totalFiles: 10,
+        totalChunks: 50,
+        lastIndexed: '2024-01-01',
+      },
     ];
     const output = formatListIndexed(states);
     expect(output).toContain('Status:       indexed');
@@ -238,7 +270,13 @@ describe('formatListIndexed', () => {
   it('shows progress during indexing', () => {
     vi.mocked(listProjects).mockReturnValue({});
     const states: CodebaseState[] = [
-      { path: '/p', collectionName: 'p', status: 'indexing', progress: 45, progressMessage: 'Processing files...' },
+      {
+        path: '/p',
+        collectionName: 'p',
+        status: 'indexing',
+        progress: 45,
+        progressMessage: 'Processing files...',
+      },
     ];
     const output = formatListIndexed(states);
     expect(output).toContain('45%');

@@ -58,7 +58,15 @@ describe('reciprocalRankFusion', () => {
 
   it('passes fileCategory through to SearchResult', () => {
     const denseResults = [
-      makePoint('1', { content: 'code', relativePath: 'src/a.ts', startLine: 1, endLine: 5, fileExtension: '.ts', language: 'typescript', fileCategory: 'source' }),
+      makePoint('1', {
+        content: 'code',
+        relativePath: 'src/a.ts',
+        startLine: 1,
+        endLine: 5,
+        fileExtension: '.ts',
+        language: 'typescript',
+        fileCategory: 'source',
+      }),
     ];
     const results = reciprocalRankFusion(denseResults, [], 10);
     expect(results[0].fileCategory).toBe('source');
@@ -66,7 +74,14 @@ describe('reciprocalRankFusion', () => {
 
   it('passes empty fileCategory for legacy points', () => {
     const denseResults = [
-      makePoint('1', { content: 'code', relativePath: 'src/a.ts', startLine: 1, endLine: 5, fileExtension: '.ts', language: 'typescript' }),
+      makePoint('1', {
+        content: 'code',
+        relativePath: 'src/a.ts',
+        startLine: 1,
+        endLine: 5,
+        fileExtension: '.ts',
+        language: 'typescript',
+      }),
     ];
     const results = reciprocalRankFusion(denseResults, [], 10);
     expect(results[0].fileCategory).toBe('');
@@ -74,12 +89,37 @@ describe('reciprocalRankFusion', () => {
 
   it('merges scores from dense and text results', () => {
     const denseResults = [
-      makePoint('1', { content: 'function foo', relativePath: 'src/a.ts', startLine: 1, endLine: 5, fileExtension: '.ts', language: 'typescript', fileCategory: 'source' }, 0.9),
-      makePoint('2', { content: 'class Bar', relativePath: 'src/b.ts', startLine: 1, endLine: 5, fileExtension: '.ts', language: 'typescript', fileCategory: 'source' }, 0.7),
+      makePoint(
+        '1',
+        {
+          content: 'function foo',
+          relativePath: 'src/a.ts',
+          startLine: 1,
+          endLine: 5,
+          fileExtension: '.ts',
+          language: 'typescript',
+          fileCategory: 'source',
+        },
+        0.9,
+      ),
+      makePoint(
+        '2',
+        {
+          content: 'class Bar',
+          relativePath: 'src/b.ts',
+          startLine: 1,
+          endLine: 5,
+          fileExtension: '.ts',
+          language: 'typescript',
+          fileCategory: 'source',
+        },
+        0.7,
+      ),
     ];
-    const textResults = rankByTermFrequency([
-      { id: '1', payload: { content: 'function foo' } },
-    ], 'function foo');
+    const textResults = rankByTermFrequency(
+      [{ id: '1', payload: { content: 'function foo' } }],
+      'function foo',
+    );
 
     const results = reciprocalRankFusion(denseResults, textResults, 10);
     // Point 1 appears in both lists so should have a higher combined score
@@ -88,7 +128,19 @@ describe('reciprocalRankFusion', () => {
 
   it('respects limit', () => {
     const denseResults = Array.from({ length: 10 }, (_, i) =>
-      makePoint(String(i), { content: `code${i}`, relativePath: `src/f${i}.ts`, startLine: 1, endLine: 5, fileExtension: '.ts', language: 'typescript', fileCategory: 'source' }, 1 - i * 0.05),
+      makePoint(
+        String(i),
+        {
+          content: `code${i}`,
+          relativePath: `src/f${i}.ts`,
+          startLine: 1,
+          endLine: 5,
+          fileExtension: '.ts',
+          language: 'typescript',
+          fileCategory: 'source',
+        },
+        1 - i * 0.05,
+      ),
     );
     const results = reciprocalRankFusion(denseResults, [], 3);
     expect(results).toHaveLength(3);

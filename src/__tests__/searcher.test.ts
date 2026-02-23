@@ -36,13 +36,13 @@ describe('applyCategoryBoost', () => {
   it('applies 0.70 multiplier to config files', () => {
     const result = makeResult({ score: 1.0, fileCategory: 'config' });
     const [boosted] = applyCategoryBoost([result]);
-    expect(boosted.score).toBeCloseTo(0.70);
+    expect(boosted.score).toBeCloseTo(0.7);
   });
 
   it('applies 0.60 multiplier to generated files', () => {
     const result = makeResult({ score: 1.0, fileCategory: 'generated' });
     const [boosted] = applyCategoryBoost([result]);
-    expect(boosted.score).toBeCloseTo(0.60);
+    expect(boosted.score).toBeCloseTo(0.6);
   });
 
   it('applies no penalty (1.0) to results without fileCategory (legacy points)', () => {
@@ -60,7 +60,11 @@ describe('applyCategoryBoost', () => {
   it('re-sorts results after boosting', () => {
     // doc file with higher raw score should be re-ranked below source file
     const docResult = makeResult({ score: 1.0, fileCategory: 'doc', relativePath: 'README.md' });
-    const sourceResult = makeResult({ score: 0.8, fileCategory: 'source', relativePath: 'src/core.ts' });
+    const sourceResult = makeResult({
+      score: 0.8,
+      fileCategory: 'source',
+      relativePath: 'src/core.ts',
+    });
     const boosted = applyCategoryBoost([docResult, sourceResult]);
     // doc: 1.0 * 0.65 = 0.65, source: 0.8 * 1.0 = 0.8 → source should be first
     expect(boosted[0].relativePath).toBe('src/core.ts');
@@ -108,7 +112,12 @@ describe('deduplicateResults', () => {
 
   it('respects limit', () => {
     const results: SearchResult[] = Array.from({ length: 10 }, (_, i) =>
-      makeResult({ score: 1 - i * 0.1, relativePath: `src/file${i}.ts`, startLine: 1, endLine: 10 }),
+      makeResult({
+        score: 1 - i * 0.1,
+        relativePath: `src/file${i}.ts`,
+        startLine: 1,
+        endLine: 10,
+      }),
     );
     const deduped = deduplicateResults(results, 3);
     expect(deduped).toHaveLength(3);

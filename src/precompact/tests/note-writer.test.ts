@@ -99,7 +99,9 @@ describe('formatSessionNote', () => {
   });
 
   it('includes MCP tools section when present', () => {
-    const note = formatSessionNote(makeSession({ mcpToolsCalled: ['search_code', 'index_codebase'] }));
+    const note = formatSessionNote(
+      makeSession({ mcpToolsCalled: ['search_code', 'index_codebase'] }),
+    );
     expect(note).toContain('## MCP Tools');
     expect(note).toContain('- search_code');
     expect(note).toContain('- index_codebase');

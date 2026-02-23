@@ -9,11 +9,11 @@ export interface CodebaseState {
   path: string;
   collectionName: string;
   status: CodebaseStatus;
-  lastIndexed?: string;   // ISO timestamp
+  lastIndexed?: string; // ISO timestamp
   totalFiles?: number;
   totalChunks?: number;
   error?: string;
-  progress?: number;       // 0-100
+  progress?: number; // 0-100
   progressMessage?: string;
 }
 
@@ -78,7 +78,7 @@ export async function cleanupOrphanedSnapshots(vectordb: VectorDB): Promise<numb
   try {
     if (!fs.existsSync(snapshotDir)) return 0;
 
-    const files = fs.readdirSync(snapshotDir).filter(f => f.endsWith('.json'));
+    const files = fs.readdirSync(snapshotDir).filter((f) => f.endsWith('.json'));
     if (files.length === 0) return 0;
 
     const probeResult = await vectordb.hasCollection('__eidetic_connectivity_probe__');
@@ -98,11 +98,11 @@ export async function cleanupOrphanedSnapshots(vectordb: VectorDB): Promise<numb
           cleaned++;
         }
       } catch (err) {
-        console.warn(`Skipping orphan check for ${collectionName}: ${err}`);
+        console.warn(`Skipping orphan check for ${collectionName}:`, err);
       }
     }
   } catch (err) {
-    console.warn(`Orphan cleanup skipped: ${err}`);
+    console.warn('Orphan cleanup skipped:', err);
   }
 
   return cleaned;

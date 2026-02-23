@@ -40,14 +40,16 @@ describe('SessionEnd hook components', () => {
 
       // SessionEnd dedup check
       const index = readSessionIndex(notesDir);
-      const alreadyCaptured = index?.sessions.some(s => s.sessionId === 'precompact-session-id') ?? false;
+      const alreadyCaptured =
+        index?.sessions.some((s) => s.sessionId === 'precompact-session-id') ?? false;
 
       expect(alreadyCaptured).toBe(true);
     });
 
     it('does not flag a different session as already captured', async () => {
       tmpDir = createTempCodebase({
-        'transcript.jsonl': '{"type":"user","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
+        'transcript.jsonl':
+          '{"type":"user","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
       });
 
       const notesDir = path.join(tmpDir, 'notes');
@@ -63,7 +65,7 @@ describe('SessionEnd hook components', () => {
 
       // Check for a different session ID (SessionEnd for a different session)
       const index = readSessionIndex(notesDir);
-      const alreadyCaptured = index?.sessions.some(s => s.sessionId === 'session-b') ?? false;
+      const alreadyCaptured = index?.sessions.some((s) => s.sessionId === 'session-b') ?? false;
 
       expect(alreadyCaptured).toBe(false);
     });
@@ -73,7 +75,7 @@ describe('SessionEnd hook components', () => {
       const notesDir = path.join(tmpDir, 'notes');
 
       const index = readSessionIndex(notesDir);
-      const alreadyCaptured = index?.sessions.some(s => s.sessionId === 'any-id') ?? false;
+      const alreadyCaptured = index?.sessions.some((s) => s.sessionId === 'any-id') ?? false;
 
       expect(alreadyCaptured).toBe(false);
     });
@@ -107,7 +109,8 @@ describe('SessionEnd hook components', () => {
 
     it('handles session with no user messages gracefully', async () => {
       tmpDir = createTempCodebase({
-        'transcript.jsonl': '{"type":"system","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
+        'transcript.jsonl':
+          '{"type":"system","timestamp":"2026-02-19T10:00:00Z","message":{"content":[]}}',
       });
 
       const session = await parseTranscript(

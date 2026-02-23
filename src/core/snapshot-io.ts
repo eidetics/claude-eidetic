@@ -15,7 +15,7 @@ export function loadSnapshot(rootPath: string): FileSnapshot | null {
     return JSON.parse(data) as FileSnapshot;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    console.warn(`Corrupted snapshot at ${filePath}, ignoring: ${err}`);
+    console.warn(`Corrupted snapshot at ${filePath}, ignoring:`, err);
     return null;
   }
 }

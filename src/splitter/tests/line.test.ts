@@ -54,7 +54,7 @@ describe('LineSplitter', () => {
     const chunks = splitter.split(code, 'javascript', 'mixed.js');
 
     expect(chunks.length).toBeGreaterThanOrEqual(1);
-    const normalChunks = chunks.filter(c => !c.content.includes('xxxx'));
+    const normalChunks = chunks.filter((c) => !c.content.includes('xxxx'));
     for (const chunk of normalChunks) {
       expect(chunk.content.length).toBeLessThanOrEqual(MAX_CHUNK_CHARS + 200);
     }

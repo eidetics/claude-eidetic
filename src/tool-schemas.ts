@@ -71,7 +71,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
         force: {
           type: 'boolean',
@@ -80,19 +81,22 @@ export const TOOL_DEFINITIONS = [
         },
         dryRun: {
           type: 'boolean',
-          description: 'Preview what would be indexed without actually indexing. Returns file counts by extension, top directories, estimated cost, and warnings.',
+          description:
+            'Preview what would be indexed without actually indexing. Returns file counts by extension, top directories, estimated cost, and warnings.',
           default: false,
         },
         customExtensions: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Additional file extensions to include beyond defaults (e.g., [".dart", ".arb"]). Extensions should include the dot prefix.',
+          description:
+            'Additional file extensions to include beyond defaults (e.g., [".dart", ".arb"]). Extensions should include the dot prefix.',
           default: [],
         },
         customIgnorePatterns: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Additional glob patterns to exclude (e.g., ["**/Pods/**", "**/DerivedData/**"]).',
+          description:
+            'Additional glob patterns to exclude (e.g., ["**/Pods/**", "**/DerivedData/**"]).',
           default: [],
         },
       },
@@ -111,7 +115,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
         query: {
           type: 'string',
@@ -126,12 +131,14 @@ export const TOOL_DEFINITIONS = [
         extensionFilter: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Optional: List of file extensions to filter results (e.g., [".ts", ".py"]).',
+          description:
+            'Optional: List of file extensions to filter results (e.g., [".ts", ".py"]).',
           default: [],
         },
         compact: {
           type: 'boolean',
-          description: 'Return compact table (file, lines, score, ~tokens) instead of full code snippets. Use Read tool to fetch interesting results. Default: true.',
+          description:
+            'Return compact table (file, lines, score, ~tokens) instead of full code snippets. Use Read tool to fetch interesting results. Default: true.',
           default: true,
         },
       },
@@ -140,7 +147,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'clear_index',
-    description: 'Clear the search index. Provide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    description:
+      'Clear the search index. Provide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -150,7 +158,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
       },
       required: [],
@@ -158,7 +167,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_indexing_status',
-    description: 'Get the current indexing status of a codebase. Provide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    description:
+      'Get the current indexing status of a codebase. Provide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -168,7 +178,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
       },
       required: [],
@@ -176,7 +187,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'list_indexed',
-    description: 'List all currently indexed codebases with their status. Returns paths, file/chunk counts, and indexing status for all known codebases in this session.',
+    description:
+      'List all currently indexed codebases with their status. Returns paths, file/chunk counts, and indexing status for all known codebases in this session.',
     inputSchema: {
       type: 'object' as const,
       properties: {},
@@ -195,7 +207,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
         dryRun: {
           type: 'boolean',
@@ -218,7 +231,8 @@ export const TOOL_DEFINITIONS = [
         },
         source: {
           type: 'string',
-          description: 'Source URL or identifier (e.g., "https://docs.langfuse.com/guides/evaluators" or "context7:langfuse/hooks").',
+          description:
+            'Source URL or identifier (e.g., "https://docs.langfuse.com/guides/evaluators" or "context7:langfuse/hooks").',
         },
         library: {
           type: 'string',
@@ -249,7 +263,8 @@ export const TOOL_DEFINITIONS = [
         },
         library: {
           type: 'string',
-          description: 'Optional: limit search to a specific library (e.g., "langfuse"). Omit to search all cached docs.',
+          description:
+            'Optional: limit search to a specific library (e.g., "langfuse"). Omit to search all cached docs.',
         },
         limit: {
           type: 'number',
@@ -284,7 +299,8 @@ export const TOOL_DEFINITIONS = [
         },
         lineNumbers: {
           type: 'boolean',
-          description: 'Prefix each line with its line number. Only enable when you need line references for editing.',
+          description:
+            'Prefix each line with its line number. Only enable when you need line references for editing.',
           default: false,
         },
       },
@@ -293,17 +309,20 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'add_memory',
-    description: 'Extract and store developer knowledge from text. Uses LLM to identify facts about coding style, tools, architecture, conventions, debugging insights, and workflow preferences. Automatically deduplicates against existing memories.',
+    description:
+      'Extract and store developer knowledge from text. Uses LLM to identify facts about coding style, tools, architecture, conventions, debugging insights, and workflow preferences. Automatically deduplicates against existing memories.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         content: {
           type: 'string',
-          description: 'Text containing developer knowledge to extract and store (conversation snippets, notes, preferences).',
+          description:
+            'Text containing developer knowledge to extract and store (conversation snippets, notes, preferences).',
         },
         source: {
           type: 'string',
-          description: 'Optional source identifier (e.g., "conversation", "claude-code", "user-note").',
+          description:
+            'Optional source identifier (e.g., "conversation", "claude-code", "user-note").',
         },
       },
       required: ['content'],
@@ -311,7 +330,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'search_memory',
-    description: 'Search stored developer memories using natural language. Returns semantically similar memories ranked by relevance.',
+    description:
+      'Search stored developer memories using natural language. Returns semantically similar memories ranked by relevance.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -327,8 +347,17 @@ export const TOOL_DEFINITIONS = [
         },
         category: {
           type: 'string',
-          description: 'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
-          enum: ['coding_style', 'tools', 'architecture', 'conventions', 'debugging', 'workflow', 'preferences'],
+          description:
+            'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
+          enum: [
+            'coding_style',
+            'tools',
+            'architecture',
+            'conventions',
+            'debugging',
+            'workflow',
+            'preferences',
+          ],
         },
       },
       required: ['query'],
@@ -342,8 +371,17 @@ export const TOOL_DEFINITIONS = [
       properties: {
         category: {
           type: 'string',
-          description: 'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
-          enum: ['coding_style', 'tools', 'architecture', 'conventions', 'debugging', 'workflow', 'preferences'],
+          description:
+            'Filter by category: coding_style, tools, architecture, conventions, debugging, workflow, preferences.',
+          enum: [
+            'coding_style',
+            'tools',
+            'architecture',
+            'conventions',
+            'debugging',
+            'workflow',
+            'preferences',
+          ],
         },
         limit: {
           type: 'number',
@@ -385,7 +423,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'browse_structure',
-    description: 'Show a condensed structural map of the indexed codebase — classes, functions, methods with signatures, grouped by file. Useful for understanding architecture without reading every file.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    description:
+      'Show a condensed structural map of the indexed codebase — classes, functions, methods with signatures, grouped by file. Useful for understanding architecture without reading every file.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -395,7 +434,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
         pathFilter: {
           type: 'string',
@@ -403,11 +443,13 @@ export const TOOL_DEFINITIONS = [
         },
         kind: {
           type: 'string',
-          description: 'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
+          description:
+            'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
         },
         maxTokens: {
           type: 'number',
-          description: 'Approximate token budget for the output (1 token ≈ 4 chars). Default: 4000.',
+          description:
+            'Approximate token budget for the output (1 token ≈ 4 chars). Default: 4000.',
           default: 4000,
         },
       },
@@ -416,7 +458,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'list_symbols',
-    description: 'List symbols (functions, classes, methods, etc.) from the indexed codebase as a compact table. Supports filtering by name, kind, or path.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+    description:
+      'List symbols (functions, classes, methods, etc.) from the indexed codebase as a compact table. Supports filtering by name, kind, or path.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -426,7 +469,8 @@ export const TOOL_DEFINITIONS = [
         },
         project: {
           type: 'string',
-          description: 'Project name (resolves via registry). Use list_indexed to see registered projects.',
+          description:
+            'Project name (resolves via registry). Use list_indexed to see registered projects.',
         },
         pathFilter: {
           type: 'string',
@@ -434,7 +478,8 @@ export const TOOL_DEFINITIONS = [
         },
         kind: {
           type: 'string',
-          description: 'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
+          description:
+            'Filter by symbol kind: function, class, interface, method, type, enum, etc.',
         },
         nameFilter: {
           type: 'string',
@@ -446,7 +491,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: '__IMPORTANT',
-    description: 'Workflow guidance for efficient code search. ALWAYS index before searching. Use project names after first index. Use extensionFilter to narrow results.',
+    description:
+      'Workflow guidance for efficient code search. ALWAYS index before searching. Use project names after first index. Use extensionFilter to narrow results.',
     inputSchema: {
       type: 'object' as const,
       properties: {},

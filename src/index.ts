@@ -11,10 +11,7 @@ console.warn = (...args: unknown[]) => {
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { loadConfig } from './config.js';
 import { createEmbedding } from './embedding/factory.js';
@@ -74,7 +71,9 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 
 async function main() {
   const config = loadConfig();
-  console.log(`Config loaded. Provider: ${config.vectordbProvider}, Model: ${config.embeddingModel}`);
+  console.log(
+    `Config loaded. Provider: ${config.vectordbProvider}, Model: ${config.embeddingModel}`,
+  );
 
   let handlers: ToolHandlers | null = null;
   let setupError: string | null = null;
@@ -109,20 +108,26 @@ async function main() {
       handlers.setMemoryStore(memoryStore);
       console.log('Memory system initialized.');
     } catch (memErr) {
-      console.warn(`Memory system initialization failed: ${memErr instanceof Error ? memErr.message : String(memErr)}`);
+      console.warn(
+        `Memory system initialization failed: ${memErr instanceof Error ? memErr.message : String(memErr)}`,
+      );
       console.warn('Memory tools will return errors. Other tools work normally.');
     }
   } catch (err) {
     setupError = err instanceof Error ? err.message : String(err);
     console.warn(`Eidetic initialization failed: ${setupError}`);
-    console.warn('Server will start in setup-required mode. All tool calls will return setup instructions.');
+    console.warn(
+      'Server will start in setup-required mode. All tool calls will return setup instructions.',
+    );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const server = new Server(
     { name: 'claude-eidetic', version: '0.1.0' },
     { capabilities: { tools: {} } },
   );
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [...TOOL_DEFINITIONS],
   }));
@@ -131,15 +136,18 @@ async function main() {
     const { name, arguments: args } = request.params;
 
     // Tools that work without initialization (no embedding/vectordb needed)
-    if (name === '__IMPORTANT') return { content: [{ type: 'text' as const, text: WORKFLOW_GUIDANCE }] };
+    if (name === '__IMPORTANT')
+      return { content: [{ type: 'text' as const, text: WORKFLOW_GUIDANCE }] };
     if (name === 'read_file') return handleReadFile(args ?? {});
 
     if (!handlers) {
       return {
-        content: [{
-          type: 'text' as const,
-          text: getSetupErrorMessage(setupError ?? 'Unknown error'),
-        }],
+        content: [
+          {
+            type: 'text' as const,
+            text: getSetupErrorMessage(setupError ?? 'Unknown error'),
+          },
+        ],
         isError: true,
       };
     }
@@ -197,7 +205,7 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

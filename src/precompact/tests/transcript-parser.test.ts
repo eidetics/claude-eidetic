@@ -13,7 +13,9 @@ describe('parseTranscript', () => {
     transcriptPath = path.join(tmpDir, 'transcript.jsonl');
   });
 
-  afterAll(() => cleanupTempDir(tmpDir));
+  afterAll(() => {
+    cleanupTempDir(tmpDir);
+  });
 
   const writeTranscript = (lines: string[]) => {
     fs.writeFileSync(transcriptPath, lines.join('\n'), 'utf-8');
@@ -75,8 +77,10 @@ describe('parseTranscript', () => {
     });
 
     it('limits to max 20 commands', async () => {
-      const lines = Array.from({ length: 30 }, (_, i) =>
-        `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"cmd${i}"}}]}}`
+      const lines = Array.from(
+        { length: 30 },
+        (_, i) =>
+          `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"cmd${i}"}}]}}`,
       );
       writeTranscript(lines);
       const result = await parseTranscript(transcriptPath, 'sess1', 'proj', '/proj');
@@ -145,9 +149,7 @@ describe('parseTranscript', () => {
     });
 
     it('sets default timestamps when missing', async () => {
-      writeTranscript([
-        '{"type":"user","message":{"content":[]}}',
-      ]);
+      writeTranscript(['{"type":"user","message":{"content":[]}}']);
       const result = await parseTranscript(transcriptPath, 'sess1', 'proj', '/proj');
       expect(result.startTime).toBe('unknown');
       expect(result.endTime).toBe('unknown');
@@ -156,8 +158,10 @@ describe('parseTranscript', () => {
 
   describe('user message extraction', () => {
     it('extracts first 5 user messages', async () => {
-      const lines = Array.from({ length: 10 }, (_, i) =>
-        `{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Message ${i}"}]}}`
+      const lines = Array.from(
+        { length: 10 },
+        (_, i) =>
+          `{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Message ${i}"}]}}`,
       );
       writeTranscript(lines);
       const result = await parseTranscript(transcriptPath, 'sess1', 'proj', '/proj');
@@ -206,7 +210,12 @@ describe('parseTranscript', () => {
 
     it('preserves passed session metadata', async () => {
       writeTranscript([]);
-      const result = await parseTranscript(transcriptPath, 'my-session', 'my-project', '/path/to/project');
+      const result = await parseTranscript(
+        transcriptPath,
+        'my-session',
+        'my-project',
+        '/path/to/project',
+      );
       expect(result.sessionId).toBe('my-session');
       expect(result.projectName).toBe('my-project');
       expect(result.projectPath).toBe('/path/to/project');

@@ -20,9 +20,11 @@ const PostToolUseInputSchema = z.object({
   cwd: z.string(),
   hook_event_name: z.literal('PostToolUse'),
   tool_name: z.string(),
-  tool_input: z.object({
-    file_path: z.string().optional(),
-  }).passthrough(),
+  tool_input: z
+    .object({
+      file_path: z.string().optional(),
+    })
+    .passthrough(),
 });
 
 async function readStdin(): Promise<string> {
@@ -104,28 +106,20 @@ async function main(): Promise<void> {
       }
 
       // Seed shadow index from HEAD tree
-      execFileSync(
-        'git',
-        ['-C', cwd, 'read-tree', `--index-output=${shadowIndex}`, 'HEAD'],
-        { timeout: 5000 },
-      );
+      execFileSync('git', ['-C', cwd, 'read-tree', `--index-output=${shadowIndex}`, 'HEAD'], {
+        timeout: 5000,
+      });
 
       fs.writeFileSync(baseCommitFile, headSha, 'utf-8');
     }
 
     // Stage the file into the shadow index
-    const absoluteFilePath = path.isAbsolute(filePath)
-      ? filePath
-      : path.resolve(cwd, filePath);
+    const absoluteFilePath = path.isAbsolute(filePath) ? filePath : path.resolve(cwd, filePath);
 
-    execFileSync(
-      'git',
-      ['-C', cwd, 'add', absoluteFilePath],
-      {
-        env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
-        timeout: 5000,
-      },
-    );
+    execFileSync('git', ['-C', cwd, 'add', absoluteFilePath], {
+      env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
+      timeout: 5000,
+    });
 
     outputSuccess();
   } catch (err) {
@@ -133,4 +127,4 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+void main();

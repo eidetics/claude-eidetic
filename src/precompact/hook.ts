@@ -39,8 +39,6 @@ const HookInputSchema = z.discriminatedUnion('hook_event_name', [
   }),
 ]);
 
-type HookInput = z.infer<typeof HookInputSchema>;
-
 async function main(): Promise<void> {
   try {
     const input = await readStdin();
@@ -71,14 +69,19 @@ async function main(): Promise<void> {
     if (hookInput.hook_event_name === 'SessionEnd') {
       // Dedup check: skip note if already captured by PreCompact
       const existingIndex = readSessionIndex(notesDir);
-      const alreadyCaptured = existingIndex?.sessions.some(s => s.sessionId === hookInput.session_id) ?? false;
+      const alreadyCaptured =
+        existingIndex?.sessions.some((s) => s.sessionId === hookInput.session_id) ?? false;
 
       if (alreadyCaptured) {
         skippedNote = true;
         // Use placeholder path — note already exists
-        const existing = existingIndex!.sessions.find(s => s.sessionId === hookInput.session_id)!;
-        noteFile = existing.noteFile;
-        process.stderr.write(`[eidetic] SessionEnd: session ${hookInput.session_id} already captured by PreCompact, skipping note\n`);
+        // existingIndex is non-null here: alreadyCaptured implies existingIndex?.sessions.some() returned true
+        const sessions = existingIndex?.sessions ?? [];
+        const existing = sessions.find((s) => s.sessionId === hookInput.session_id);
+        noteFile = existing?.noteFile ?? writeSessionNote(notesDir, session);
+        process.stderr.write(
+          `[eidetic] SessionEnd: session ${hookInput.session_id} already captured by PreCompact, skipping note\n`,
+        );
       } else {
         noteFile = writeSessionNote(notesDir, session);
         updateSessionIndex(notesDir, session, noteFile);
@@ -150,15 +153,21 @@ async function extractMemories(session: ExtractedSession): Promise<number> {
 
   try {
     // Dynamic imports to avoid loading heavy deps on every hook invocation
-    const [{ loadConfig }, { createEmbedding }, { QdrantVectorDB }, { MemoryHistory }, { MemoryStore }, { getMemoryDbPath }] =
-      await Promise.all([
-        import('../config.js'),
-        import('../embedding/factory.js'),
-        import('../vectordb/qdrant.js'),
-        import('../memory/history.js'),
-        import('../memory/store.js'),
-        import('../paths.js'),
-      ]);
+    const [
+      { loadConfig },
+      { createEmbedding },
+      { QdrantVectorDB },
+      { MemoryHistory },
+      { MemoryStore },
+      { getMemoryDbPath },
+    ] = await Promise.all([
+      import('../config.js'),
+      import('../embedding/factory.js'),
+      import('../vectordb/qdrant.js'),
+      import('../memory/history.js'),
+      import('../memory/store.js'),
+      import('../paths.js'),
+    ]);
 
     const config = loadConfig();
     const embedding = createEmbedding(config);
@@ -168,10 +177,14 @@ async function extractMemories(session: ExtractedSession): Promise<number> {
     const memoryStore = new MemoryStore(embedding, vectordb, history);
 
     const actions = await memoryStore.addMemory(content, 'session-end-hook');
-    process.stderr.write(`[eidetic] Memory extraction: ${actions.length} action(s) (${actions.map(a => a.event).join(', ') || 'none'})\n`);
+    process.stderr.write(
+      `[eidetic] Memory extraction: ${actions.length} action(s) (${actions.map((a) => a.event).join(', ') || 'none'})\n`,
+    );
     return actions.length;
   } catch (err) {
-    process.stderr.write(`[eidetic] Memory extraction failed (non-fatal): ${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(
+      `[eidetic] Memory extraction failed (non-fatal): ${err instanceof Error ? err.message : String(err)}\n`,
+    );
     return 0;
   }
 }
@@ -196,4 +209,4 @@ function outputError(message: string): void {
   process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
 }
 
-main();
+void main();

@@ -21,7 +21,9 @@ const mockClient = vi.hoisted(() => ({
 
 vi.mock('@zilliz/milvus2-sdk-node', () => ({
   MilvusClient: class FakeMilvusClient {
-    constructor() { Object.assign(this, mockClient); }
+    constructor() {
+      Object.assign(this, mockClient);
+    }
   },
   DataType: {
     VarChar: 21,
@@ -162,20 +164,8 @@ describe('MilvusVectorDB', () => {
   describe('insert', () => {
     it('inserts documents with correct fields', async () => {
       const db = new MilvusVectorDB();
-      await db.insert('test_col', [{
-        id: 'doc1',
-        content: 'function hello() {}',
-        vector: [0.1, 0.2],
-        relativePath: 'src/hello.ts',
-        startLine: 1,
-        endLine: 3,
-        fileExtension: '.ts',
-        language: 'typescript',
-      }]);
-
-      expect(mockClient.insert).toHaveBeenCalledWith({
-        collection_name: 'test_col',
-        data: [{
+      await db.insert('test_col', [
+        {
           id: 'doc1',
           content: 'function hello() {}',
           vector: [0.1, 0.2],
@@ -184,12 +174,28 @@ describe('MilvusVectorDB', () => {
           endLine: 3,
           fileExtension: '.ts',
           language: 'typescript',
-          fileCategory: 'source',
-          symbolName: '',
-          symbolKind: '',
-          symbolSignature: '',
-          parentSymbol: '',
-        }],
+        },
+      ]);
+
+      expect(mockClient.insert).toHaveBeenCalledWith({
+        collection_name: 'test_col',
+        data: [
+          {
+            id: 'doc1',
+            content: 'function hello() {}',
+            vector: [0.1, 0.2],
+            relativePath: 'src/hello.ts',
+            startLine: 1,
+            endLine: 3,
+            fileExtension: '.ts',
+            language: 'typescript',
+            fileCategory: 'source',
+            symbolName: '',
+            symbolKind: '',
+            symbolSignature: '',
+            parentSymbol: '',
+          },
+        ],
       });
     });
 
@@ -202,10 +208,20 @@ describe('MilvusVectorDB', () => {
     it('throws VectorDBError on failure', async () => {
       mockClient.insert.mockRejectedValue(new Error('quota exceeded'));
       const db = new MilvusVectorDB();
-      await expect(db.insert('test_col', [{
-        id: 'x', content: 'x', vector: [0], relativePath: 'x',
-        startLine: 0, endLine: 0, fileExtension: '.ts', language: 'ts',
-      }])).rejects.toThrow(VectorDBError);
+      await expect(
+        db.insert('test_col', [
+          {
+            id: 'x',
+            content: 'x',
+            vector: [0],
+            relativePath: 'x',
+            startLine: 0,
+            endLine: 0,
+            fileExtension: '.ts',
+            language: 'ts',
+          },
+        ]),
+      ).rejects.toThrow(VectorDBError);
     });
   });
 
@@ -218,15 +234,17 @@ describe('MilvusVectorDB', () => {
         schema: { fields: [{ name: 'vector' }, { name: 'content' }] },
       });
       mockClient.search.mockResolvedValue({
-        results: [{
-          content: 'function hello() {}',
-          relativePath: 'src/hello.ts',
-          startLine: 1,
-          endLine: 3,
-          fileExtension: '.ts',
-          language: 'typescript',
-          score: 0.95,
-        }],
+        results: [
+          {
+            content: 'function hello() {}',
+            relativePath: 'src/hello.ts',
+            startLine: 1,
+            endLine: 3,
+            fileExtension: '.ts',
+            language: 'typescript',
+            score: 0.95,
+          },
+        ],
       });
 
       const db = new MilvusVectorDB();
@@ -309,11 +327,13 @@ describe('MilvusVectorDB', () => {
     it('throws VectorDBError on search failure', async () => {
       mockClient.search.mockRejectedValue(new Error('timeout'));
       const db = new MilvusVectorDB();
-      await expect(db.search('test_col', {
-        queryVector: [0.1],
-        queryText: 'test',
-        limit: 10,
-      })).rejects.toThrow(VectorDBError);
+      await expect(
+        db.search('test_col', {
+          queryVector: [0.1],
+          queryText: 'test',
+          limit: 10,
+        }),
+      ).rejects.toThrow(VectorDBError);
     });
   });
 

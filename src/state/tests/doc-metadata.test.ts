@@ -92,7 +92,7 @@ describe('doc-metadata', () => {
 
     const reactEntries = findDocEntries('react');
     expect(reactEntries).toHaveLength(2);
-    expect(reactEntries.every(e => e.library === 'react')).toBe(true);
+    expect(reactEntries.every((e) => e.library === 'react')).toBe(true);
   });
 
   it('findDocEntries returns empty for unknown library', () => {

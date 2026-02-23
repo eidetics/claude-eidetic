@@ -43,16 +43,20 @@ export class MemoryHistory {
     source: string | null = null,
     updatedAt: string | null = null,
   ): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO memory_history (memory_id, previous_value, new_value, event, created_at, updated_at, source)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(memoryId, previousValue, newValue, event, new Date().toISOString(), updatedAt, source);
+    `,
+      )
+      .run(memoryId, previousValue, newValue, event, new Date().toISOString(), updatedAt, source);
   }
 
   getHistory(memoryId: string): HistoryEntry[] {
-    return this.db.prepare(
-      'SELECT * FROM memory_history WHERE memory_id = ? ORDER BY created_at ASC',
-    ).all(memoryId) as HistoryEntry[];
+    return this.db
+      .prepare('SELECT * FROM memory_history WHERE memory_id = ? ORDER BY created_at ASC')
+      .all(memoryId) as HistoryEntry[];
   }
 
   close(): void {

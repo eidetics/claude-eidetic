@@ -61,7 +61,6 @@ describe('StateManager', () => {
     sm.setIndexing('/b', 'col_b');
     const states = sm.getAllStates();
     expect(states).toHaveLength(2);
-    expect(states.map(s => s.path).sort()).toEqual(['/a', '/b']);
+    expect(states.map((s) => s.path).sort()).toEqual(['/a', '/b']);
   });
-
 });

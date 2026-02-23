@@ -10,7 +10,15 @@ import {
 function makePoint(id: string | number, content: string, extra: Record<string, unknown> = {}) {
   return {
     id,
-    payload: { content, relativePath: 'test.ts', startLine: 1, endLine: 10, fileExtension: '.ts', language: 'typescript', ...extra },
+    payload: {
+      content,
+      relativePath: 'test.ts',
+      startLine: 1,
+      endLine: 10,
+      fileExtension: '.ts',
+      language: 'typescript',
+      ...extra,
+    },
   };
 }
 
@@ -39,10 +47,7 @@ describe('rankByTermFrequency', () => {
   });
 
   it('handles multi-word queries', () => {
-    const points = [
-      makePoint(1, 'the quick brown fox'),
-      makePoint(2, 'quick fox quick fox'),
-    ];
+    const points = [makePoint(1, 'the quick brown fox'), makePoint(2, 'quick fox quick fox')];
     const ranked = rankByTermFrequency(points, 'quick fox');
     // Point 2 has higher TF for "quick" and "fox"
     expect(ranked[0].id).toBe(2);
@@ -57,10 +62,7 @@ describe('rankByTermFrequency', () => {
   it('normalizes by word count', () => {
     const shortContent = 'hello world';
     const longContent = 'hello world ' + 'padding '.repeat(100);
-    const points = [
-      makePoint(1, shortContent),
-      makePoint(2, longContent),
-    ];
+    const points = [makePoint(1, shortContent), makePoint(2, longContent)];
     const ranked = rankByTermFrequency(points, 'hello world');
     // Short content has higher TF due to fewer total words
     expect(ranked[0].id).toBe(1);
@@ -134,7 +136,8 @@ describe('reciprocalRankFusion', () => {
 
   it('respects limit', () => {
     const dense = Array.from({ length: 10 }, (_, i) => ({
-      score: 0.9 - i * 0.05, ...makePoint(i, `item${i}`),
+      score: 0.9 - i * 0.05,
+      ...makePoint(i, `item${i}`),
     }));
     const results = reciprocalRankFusion(dense, [], 3);
     expect(results).toHaveLength(3);
