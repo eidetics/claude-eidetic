@@ -142,6 +142,8 @@ async function main(): Promise<void> {
     const child = spawn(process.execPath, [runnerPath, manifestFile], {
       detached: true,
       stdio: 'ignore',
+      env: process.env,
+      windowsHide: true,
     });
     child.unref();
 
