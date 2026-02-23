@@ -22,7 +22,6 @@ npm run test:watch          # watch mode
 npm run test:coverage       # with coverage
 npm run test:integration    # requires running Qdrant + OPENAI_API_KEY
 npm run test:all            # unit + integration
-npm run test:audit          # custom code quality audits (scripts/audit/)
 ```
 
 Run a single test file: `npx vitest run src/core/searcher.test.ts`
