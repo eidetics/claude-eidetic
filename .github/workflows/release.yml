@@ -1,9 +1,16 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   release:
@@ -13,11 +20,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Install dependencies
         run: npm ci
@@ -28,6 +42,20 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Bump version
+        run: npm version ${{ github.event.inputs.bump }} --no-git-tag-version
+
+      - name: Sync plugin.json version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          node -e "
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('$PLUGIN_JSON', 'utf8'));
+          p.version = '$VERSION';
+          fs.writeFileSync('$PLUGIN_JSON', JSON.stringify(p, null, 2) + '\n');
+          "
+
       - name: Build
         run: npm run clean && npm run build
 
@@ -36,7 +64,20 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Commit, tag, and push
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v$VERSION"
+          PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          git add package.json package-lock.json "$PLUGIN_JSON"
+          git commit -m "chore(release): $TAG"
+          git tag "$TAG"
+          git push origin main
+          git push origin "$TAG"
+
       - name: Create GitHub release
-        run: gh release create "${{ github.ref_name }}" --generate-notes --title "${{ github.ref_name }}"
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          gh release create "v$VERSION" --generate-notes --title "v$VERSION"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
