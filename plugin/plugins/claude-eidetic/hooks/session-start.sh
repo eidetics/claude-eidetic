@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Eidetic SessionStart hook — checks for required configuration
+# Eidetic SessionStart hook — checks config, injects last-session context
 # Message content lives in src/setup-message.ts (single source of truth)
 
 if [ -z "$OPENAI_API_KEY" ] && [ "${EMBEDDING_PROVIDER:-openai}" = "openai" ]; then
@@ -7,5 +7,5 @@ if [ -z "$OPENAI_API_KEY" ] && [ "${EMBEDDING_PROVIDER:-openai}" = "openai" ]; t
   exit 0
 fi
 
-# Key is set — no output needed (runtime errors handled by MCP server)
-exit 0
+# Inject Tier-0 context from most recent session (non-blocking, best-effort)
+node "${CLAUDE_PLUGIN_ROOT}/dist/precompact/tier0-inject.js" 2>/dev/null || true
