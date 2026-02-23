@@ -162,6 +162,7 @@ async function extractMemories(session: ExtractedSession): Promise<number> {
 
     const config = loadConfig();
     const embedding = createEmbedding(config);
+    await embedding.initialize();
     const vectordb = new QdrantVectorDB();
     const history = new MemoryHistory(getMemoryDbPath());
     const memoryStore = new MemoryStore(embedding, vectordb, history);
