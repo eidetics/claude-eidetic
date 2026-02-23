@@ -9,8 +9,6 @@ import {
   removeDocEntry,
   findDocEntries,
   isStale,
-  staleDays,
-  daysAgo,
   listDocLibraries,
   type DocEntry,
 } from '../doc-metadata.js';
@@ -110,23 +108,6 @@ describe('doc-metadata', () => {
     const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
     const entry = makeEntry({ indexedAt: old.toISOString(), ttlDays: 7 });
     expect(isStale(entry)).toBe(true);
-  });
-
-  it('staleDays returns 0 for fresh entry', () => {
-    const entry = makeEntry({ indexedAt: new Date().toISOString(), ttlDays: 7 });
-    expect(staleDays(entry)).toBe(0);
-  });
-
-  it('staleDays returns positive for stale entry', () => {
-    const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
-    const entry = makeEntry({ indexedAt: old.toISOString(), ttlDays: 7 });
-    expect(staleDays(entry)).toBe(3);
-  });
-
-  it('daysAgo returns correct number', () => {
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-    const entry = makeEntry({ indexedAt: twoDaysAgo.toISOString() });
-    expect(daysAgo(entry)).toBe(2);
   });
 
   it('listDocLibraries returns sorted unique libraries', () => {

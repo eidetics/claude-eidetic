@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Splitter, CodeChunk } from './types.js';
+import { MAX_CHUNK_CHARS } from './types.js';
 import { extractSymbolInfo, isContainerType } from './symbol-extract.js';
 
 // tree-sitter and language parsers are native CommonJS modules
@@ -43,8 +44,6 @@ const LANG_CANONICAL: Record<string, string> = {
   js: 'javascript', ts: 'typescript', py: 'python',
   rs: 'rust', 'c++': 'cpp', c: 'cpp', cs: 'csharp',
 };
-
-const MAX_CHUNK_CHARS = 2500;
 
 export class AstSplitter implements Splitter {
   private parser = new Parser();
@@ -122,7 +121,6 @@ export class AstSplitter implements Splitter {
           const symbolInfo = extractSymbolInfo(
             current as Parameters<typeof extractSymbolInfo>[0],
             code,
-            language,
             parentName,
           );
           const chunk: CodeChunk = {

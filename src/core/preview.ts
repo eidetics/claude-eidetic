@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Embedding } from '../embedding/types.js';
 import { scanFiles } from './sync.js';
 import { normalizePath } from '../paths.js';
 
@@ -15,7 +14,6 @@ export interface PreviewResult {
 
 export async function previewCodebase(
   rootPath: string,
-  embedding: Embedding,
   customExtensions?: string[],
   customIgnorePatterns?: string[],
 ): Promise<PreviewResult> {

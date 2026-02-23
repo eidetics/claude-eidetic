@@ -69,15 +69,6 @@ export class StateManager {
   remove(normalizedPath: string): void {
     this.states.delete(normalizedPath);
   }
-
-  markExisting(normalizedPath: string, collectionName: string): void {
-    this.states.set(normalizedPath, {
-      path: normalizedPath,
-      collectionName,
-      status: 'indexed',
-      lastIndexed: 'unknown (pre-existing)',
-    });
-  }
 }
 
 export async function cleanupOrphanedSnapshots(vectordb: VectorDB): Promise<number> {

@@ -68,20 +68,6 @@ export function isStale(entry: DocEntry): boolean {
   return now - indexedAt > ttlMs;
 }
 
-export function staleDays(entry: DocEntry): number {
-  const indexedAt = new Date(entry.indexedAt).getTime();
-  const now = Date.now();
-  const ttlMs = entry.ttlDays * 24 * 60 * 60 * 1000;
-  const overMs = now - indexedAt - ttlMs;
-  if (overMs <= 0) return 0;
-  return Math.ceil(overMs / (24 * 60 * 60 * 1000));
-}
-
-export function daysAgo(entry: DocEntry): number {
-  const indexedAt = new Date(entry.indexedAt).getTime();
-  return Math.floor((Date.now() - indexedAt) / (24 * 60 * 60 * 1000));
-}
-
 export function listDocLibraries(): string[] {
   const metadata = loadDocMetadata();
   const libs = new Set<string>();

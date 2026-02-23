@@ -1,3 +1,5 @@
+export const MAX_CHUNK_CHARS = 2500;
+
 export interface CodeChunk {
   content: string;
   startLine: number;

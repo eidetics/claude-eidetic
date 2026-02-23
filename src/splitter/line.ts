@@ -1,8 +1,8 @@
 import type { Splitter, CodeChunk } from './types.js';
+import { MAX_CHUNK_CHARS } from './types.js';
 
 const DEFAULT_CHUNK_LINES = 60;
 const OVERLAP_LINES = 5;
-const MAX_CHUNK_CHARS = 2500;
 
 export class LineSplitter implements Splitter {
   private chunkLines: number;
