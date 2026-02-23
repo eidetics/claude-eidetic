@@ -45,15 +45,9 @@ vi.mock('../snapshot-io.js', () => ({
 
 // Mock splitters: AstSplitter returns one chunk, LineSplitter is fallback
 vi.mock('../splitter/ast.js', async () => {
-  const { AstSplitter } = await vi
+  await vi
     .importActual<typeof import('../../splitter/ast.js')>('../splitter/ast.js')
-    .catch(() => ({
-      AstSplitter: class {
-        split() {
-          return [];
-        }
-      },
-    }));
+    .catch(() => ({}));
   return {
     AstSplitter: class {
       split(_code: string, _lang: string, filePath: string) {

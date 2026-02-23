@@ -51,11 +51,6 @@ describe('Full pipeline: index → search → status → clear', () => {
     expect(indexResult.content[0].text).toContain('Indexing complete');
     expect(indexResult.content[0].text).toContain('Total files');
 
-    // Verify state is set
-    const normalizedPath = indexResult.content[0].text
-      .split('\n')[0]
-      .replace('Indexing complete for ', '');
-
     // 2. Search
     const searchResult = await handlers.handleSearchCode({
       path: tmpCodebase,
