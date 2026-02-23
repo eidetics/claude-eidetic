@@ -10,6 +10,8 @@ npx tsc              # build to dist/
 npm run dev          # watch mode (tsx)
 npm start            # run MCP server on stdio
 npm run typecheck    # type-check only, no emit
+npm run lint         # eslint src/
+npm run format       # prettier --write src/**/*.ts
 ```
 
 ## Testing
@@ -76,4 +78,4 @@ Only `OPENAI_API_KEY` is required for default config. Qdrant auto-provisions via
 
 ## Plugin
 
-`plugin/` contains a Claude Code plugin: `.mcp.json` (auto-starts the server), skills (`catchup`, `wrapup`, `search`, `index`), hooks (session-start validation, Read tool nudge toward `search_code`), and a plugin manifest.
+`plugin/` contains a Claude Code plugin: `.mcp.json` (auto-starts the server), skills (`catchup`, `wrapup`, `search`, `index`, `cache-docs`), 8 hook events (SessionStart, PreCompact, SessionEnd, PostToolUse, Stop, UserPromptSubmit, 2× PreToolUse), and a plugin manifest. The Read PreToolUse hook **blocks** built-in Read for text/code files and redirects to `read_file`.

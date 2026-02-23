@@ -10,6 +10,8 @@ npx tsc              # build to dist/
 npm run dev          # watch mode (tsx)
 npm start            # run MCP server on stdio
 npm run typecheck    # type-check only, no emit
+npm run lint         # eslint src/
+npm run format       # prettier --write src/**/*.ts
 ```
 
 ## Testing
@@ -29,7 +31,7 @@ Integration tests need Qdrant at `localhost:6333` and `OPENAI_API_KEY` set. Unit
 
 ## Architecture
 
-Single ESM package (~2,200 LOC). MCP server over stdio that indexes codebases into a vector DB and provides hybrid semantic search.
+Single ESM package. MCP server over stdio that indexes codebases into a vector DB and provides hybrid semantic search.
 
 **Data flow:** `index_codebase` → scan files → split into chunks (AST or line-based) → embed via OpenAI → store in Qdrant/Milvus. `search_code` → embed query → hybrid search (dense vector + full-text, fused via RRF) → deduplicate overlapping chunks → return results.
 
@@ -56,8 +58,8 @@ Single ESM package (~2,200 LOC). MCP server over stdio that indexes codebases in
 
 ## Environment
 
-Only `OPENAI_API_KEY` is required. Qdrant auto-provisions via Docker if not running. Set `VECTORDB_PROVIDER=milvus` for Milvus, `EMBEDDING_PROVIDER=ollama` for local embeddings.
+Only `OPENAI_API_KEY` is required for default config. Qdrant auto-provisions via Docker if not running. Set `VECTORDB_PROVIDER=milvus` for Milvus, `EMBEDDING_PROVIDER=ollama` for local embeddings.
 
 ## Plugin
 
-`plugin/` contains a Claude Code plugin with `.mcp.json` (auto-starts the server), skills (`catchup`, `wrapup`, `search`, `index`), and a Read hook that nudges toward `search_code` over file reads.
+`plugin/` contains a Claude Code plugin with `.mcp.json` (auto-starts the server), skills (`catchup`, `wrapup`, `search`, `index`, `cache-docs`), 8 hook events (SessionStart, PreCompact, SessionEnd, PostToolUse, Stop, UserPromptSubmit, 2× PreToolUse), and a plugin manifest. The Read PreToolUse hook **blocks** built-in Read for text/code files and redirects to `read_file`.

@@ -1,372 +1,368 @@
-# Eidetic
+# claude-eidetic
 
-[![Node.js >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org) [![npm](https://img.shields.io/npm/v/claude-eidetic)](https://www.npmjs.com/package/claude-eidetic) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Semantic code search and documentation caching for Claude Code. Index your codebase once, then search by meaning — not just keywords — with compact, token-efficient results.
+[![tests](https://img.shields.io/github/actions/workflow/status/eidetics/claude-eidetic/ci.yml?style=flat-square&label=tests)](https://github.com/eidetics/claude-eidetic/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/claude-eidetic)](https://www.npmjs.com/package/claude-eidetic)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Get started
+Semantic code search and persistent memory for Claude Code.
 
-> **Note:** An `OPENAI_API_KEY` is required for the default embedding provider. Alternatively, use [Ollama](#embedding-providers) for free local embeddings.
+---
 
-**As a Claude Code plugin (recommended):**
+## 🔥 The Problem
 
-The `plugin/` directory is a Claude Code plugin marketplace. Add it to `~/.claude/settings.json`:
+Every new Claude Code session starts cold. You re-explain the architecture. You re-fetch the same docs. Claude reads the same files repeatedly, burning tokens just to get back to where you were.
+
+On an active codebase, a single "understand this module" session can spend 10,000+ tokens on file reads. The next session spends the same 10,000 again.
+
+**Eidetic stops the repetition.**
+
+| Task | Without Eidetic | With Eidetic |
+|---|---|---|
+| Find where auth errors are handled | Grep cascade, read 8 files, ~10,700 tokens | `search_code("auth error handling")` ~220 tokens |
+| Resume after context compaction | Re-explain 20 min of context, ~2,000 tokens | `/catchup` ~200 tokens |
+| Look up React hooks docs | Fetch docs page, ~5,000 tokens | `search_documents("React useEffect")` ~20 tokens |
+| Read a 400-line file | Built-in Read with line numbers, ~900 tokens | `read_file(path)` ~740 tokens |
+
+---
+
+## 💡 Why Eidetic?
+
+**One plugin, not three.** Most tools make you choose: semantic search, or memory, or session continuity. Eidetic does all of them, and they compound: search results surface in memory, session summaries reference code, cached docs are semantically searchable.
+
+**Sessions that survive.** When Claude Code compacts your context, a `PreCompact` hook captures what happened (files changed, tasks, commands) before they're lost. When you start fresh, `/catchup` reconstructs exactly where you left off. Automatic, not manual.
+
+**Memory that learns.** `add_memory` uses an LLM to extract structured facts from conversation text (coding style, architecture decisions, debugging insights, preferences) and deduplicates them semantically. Not a static config file you forget to update.
+
+**Token-efficient by design.** `search_code` returns ~20 tokens per result (vs ~100+ for Grep, ~2,000 per file read). Documentation cached once via `index_document` costs ~20 tokens to retrieve instead of ~5,000 to re-fetch. `read_file` strips line-number overhead for 15-20% savings on every file read.
+
+**Works invisibly.** Hooks intercept expensive operations automatically. A nudge toward `search_code` appears when you reach for Read. Session state saves on exit. The codebase re-indexes when it changes. Zero behavior change required. It just makes everything cheaper.
+
+---
+
+## 🚀 Quick Start
+
+**1. Install the plugin**
+
+```bash
+claude plugin install eidetics/claude-eidetic
+```
+
+**2. Set your API keys**
+
+```bash
+export OPENAI_API_KEY=sk-...         # for embeddings (default)
+export ANTHROPIC_API_KEY=sk-ant-...  # for memory extraction (default)
+# or use Ollama for both (see Configuration)
+```
+
+**3. Start Claude Code and ask a question**
+
+```
+> How does authentication work in this codebase?
+```
+
+Before searching, index your codebase once:
+
+```
+index_codebase(path="/your/project")
+```
+
+Subsequent searches use cached embeddings; no re-embedding unless files change.
+
+---
+
+## ✨ Features
+
+### 🔍 Semantic Code Search
+
+Hybrid dense-vector + full-text search fused with RRF. AST-aware chunking via tree-sitter keeps functions and classes intact. Incremental re-indexing via SHA-256 snapshots; only changed files are re-embedded on subsequent indexes.
+
+```
+search_code("how does the retry logic work")
+search_code("authentication middleware", extensionFilter=[".ts"])
+search_code(project="backend", query="auth flow")   # search any indexed project by name
+```
+
+### 🏗️ Architecture at a Glance
+
+`browse_structure` returns a condensed map of every class, function, and method with signatures, grouped by file. One call instead of a Glob + Read cascade.
+
+```
+browse_structure(path="/my/project", kind="class")
+list_symbols(path="/my/project", nameFilter="handle")
+```
+
+### 📚 Documentation Cache
+
+Fetch docs once, search forever. `index_document` stores external documentation as searchable embeddings. `search_documents` retrieves relevant passages at ~20 tokens per result. A TTL tracks staleness; stale docs still return results but are flagged.
+
+```
+# After fetching React docs:
+index_document(content=..., library="react", topic="hooks", source="https://...")
+# Later, in any session:
+search_documents("React useCallback dependencies", library="react")
+```
+
+### 🧠 Persistent Memory
+
+`add_memory` extracts structured facts from conversation text using an LLM, categorizes them, and deduplicates semantically. Memories persist across sessions in a local SQLite database. Seven categories: `coding_style`, `tools`, `architecture`, `conventions`, `debugging`, `workflow`, `preferences`.
+
+```
+add_memory("Always use absolute imports, never relative")
+search_memory("how does this team handle errors")
+```
+
+### 🔄 Session Continuity
+
+**Automatic.** When a session ends, a `SessionEnd` hook parses the conversation transcript and writes a structured note to `~/.eidetic/notes/<project>/`, then indexes it. The note captures what actually happened: files modified, tasks created/completed, bash commands run, and the user's requests. When context compaction fires mid-session, a `PreCompact` hook does the same thing first. No user action required.
+
+**With decisions.** `/wrapup` goes further: it reads the conversation and extracts decisions with rationale, rejected alternatives, open questions, and next actions. Run it at the end of any session where you made meaningful choices. `/catchup` at the start of a new session searches all indexed notes and reconstructs where you left off in ~200 tokens.
+
+At `SessionStart`, the most recent session note is automatically injected into context, so every session opens knowing what changed last time.
+
+### 👻 Invisible Optimizations
+
+Eight hook events fire automatically with zero user action:
+
+| Hook | Trigger | What it does |
+|---|---|---|
+| `SessionStart` | Session opens | Validates config, injects last-session context |
+| `UserPromptSubmit` | Every message | Nudges toward `search_code` over Grep/Explore for conceptual queries |
+| `PreToolUse` (Read) | Before every Read | Blocks Read for text files, redirects to `read_file` for 15-20% token savings |
+| `PreToolUse` (WebFetch / query-docs) | Before doc fetches | Suggests `search_documents` if library is cached (allows fetch either way) |
+| `PostToolUse` (Write / Edit) | After every file write | Tracks changed files in a shadow git index |
+| `Stop` | After Claude responds | Commits shadow index; triggers targeted re-index of changed files only |
+| `PreCompact` | Before context compaction | Captures session state to notes before memory is lost |
+| `SessionEnd` | Session closes | Writes session note (files, tasks, commands); extracts developer memories via LLM |
+
+---
+
+## 🗺️ When to Use What
+
+| Need | Use | Notes |
+|---|---|---|
+| Find implementations by concept | `search_code` | ~20 tokens/result, semantic |
+| Exact string or regex match | Grep | Grep wins for exact matches |
+| Find file by exact name | Glob | Glob wins for name patterns |
+| Understand module structure | `browse_structure` | One call vs Glob + Read cascade |
+| Read a specific known file | `read_file` | 15-20% cheaper than built-in Read |
+| Search cached documentation | `search_documents` | ~250x cheaper than re-fetching |
+| Recall project conventions | `search_memory` | Global across all projects and sessions |
+
+---
+
+## 📖 Skills Reference
+
+| Skill | What it does |
+|---|---|
+| `/search` | Guided semantic search with best-practice prompts |
+| `/index` | Index or re-index a codebase with dry-run option |
+| `/cache-docs` | Fetch and cache external documentation |
+| `/catchup` | Search session notes and reconstruct where you left off |
+| `/wrapup` | Extract decisions, rationale, open questions, and next actions from the conversation |
+
+---
+
+## 📦 Installation
+
+### Plugin (recommended)
+
+```bash
+claude plugin install eidetics/claude-eidetic
+```
+
+The plugin auto-starts the MCP server, installs skills, and configures hooks.
+
+### npx (manual MCP config)
+
+Add to your `.mcp.json`:
 
 ```json
 {
-  "extraKnownMarketplaces": {
+  "mcpServers": {
     "claude-eidetic": {
-      "source": "github",
-      "owner": "eidetics",
-      "repo": "claude-eidetic",
-      "path": "plugin"
+      "command": "npx",
+      "args": ["-y", "claude-eidetic"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
     }
-  },
-  "enabledPlugins": {
-    "claude-eidetic@claude-eidetic": true
   }
 }
 ```
 
-For local development, use a file source instead:
+`ANTHROPIC_API_KEY` is needed for the memory LLM (default provider). Omit it if using `MEMORY_LLM_PROVIDER=openai` or `ollama`.
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "claude-eidetic": {
-      "source": "file",
-      "path": "/path/to/eidetic/plugin/.claude-plugin/marketplace.json"
-    }
-  },
-  "enabledPlugins": {
-    "claude-eidetic@claude-eidetic": true
-  }
-}
+### Global install
+
+```bash
+npm install -g claude-eidetic
 ```
 
-Restart Claude Code after installing. The plugin provides the MCP server, skills (`/catchup`, `/wrapup`, `/eidetic:search`, `/eidetic:index`), and hooks.
+### From source
 
-**As a standalone MCP server (no skills/hooks):**
-
-```shell
-claude mcp add claude-eidetic -- npx claude-eidetic
+```bash
+git clone https://github.com/eidetics/claude-eidetic
+cd claude-eidetic
+npm install
+npx tsc
+npm start
 ```
 
-This only adds the MCP server. For the full experience, use the plugin method above.
+### Requirements
 
-**First use:**
+- Node.js >= 20.0.0
+- An API key (OpenAI for embeddings, Anthropic for memory extraction, or Ollama for both free)
+- Docker (optional): Qdrant auto-provisions via Docker if not already running
+- C/C++ build tools: required by tree-sitter native bindings (`node-gyp`)
 
-```
-index_codebase(path="/your/project")   # Index once (~30s for a typical project)
-search_code(query="auth middleware")    # Search by meaning
-```
+---
 
-Qdrant (the vector database) is auto-provisioned via Docker if not already running. Zero configuration required.
-
-## What it does
-
-Eidetic is an MCP server that indexes codebases into a vector database and provides hybrid semantic search. It combines dense vector similarity with full-text keyword matching, fused via Reciprocal Rank Fusion (RRF), then deduplicates overlapping chunks. Results are compact — roughly 50 tokens per result in default mode.
-
-```
-scan files → split (AST or line-based) → embed → store in vector DB
-                                                        ↓
-              deduplicate ← RRF fusion ← hybrid search (dense + full-text)
-                   ↓
-            compact results (~50 tokens each)
-```
-
-Indexing is incremental. On re-index, only added or modified files are re-embedded, using content-hash snapshots to detect changes.
-
-## MCP tools
-
-Eidetic exposes 8 MCP tools.
-
-### Code search
-
-**`index_codebase`** — Index a directory for semantic search.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `path` | string | Absolute path to index |
-| `project` | string | Project name (resolves via registry) |
-| `force` | boolean | Force full re-index (default: false) |
-| `dryRun` | boolean | Preview files, cost estimate, warnings (default: false) |
-| `customExtensions` | string[] | Extra file extensions to include (e.g., `[".dart"]`) |
-| `customIgnorePatterns` | string[] | Extra glob patterns to exclude |
-
-Incremental by default — only changed files are re-embedded. Use `dryRun` first to preview what would be indexed and get a cost estimate.
-
-**`search_code`** — Hybrid semantic search over an indexed codebase.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `path` | string | Absolute path to search |
-| `project` | string | Project name (resolves via registry) |
-| `query` | string | Natural language query (required) |
-| `limit` | number | Max results, up to 50 (default: 10) |
-| `extensionFilter` | string[] | Filter by file extension (e.g., `[".ts"]`) |
-| `compact` | boolean | Compact table output (default: true) |
-
-Default compact mode returns a table of file, lines, score, and token estimate. Use the `Read` tool to fetch full content for interesting results.
-
-**`get_indexing_status`** — Poll indexing progress with live percentage.
-
-**`list_indexed`** — List all tracked codebases with status, file counts, and chunk counts.
-
-**`clear_index`** — Delete a codebase's index and snapshot.
-
-### Documentation cache
-
-**`index_document`** — Cache external documentation for cheap search later.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `content` | string | Full text content to cache (required) |
-| `source` | string | Source URL or identifier (required) |
-| `library` | string | Library name for grouping (required) |
-| `topic` | string | Topic within the library (required) |
-| `ttlDays` | number | Days before content is considered stale (default: 7) |
-
-**`search_documents`** — Search cached documentation.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `query` | string | Natural language query (required) |
-| `library` | string | Limit to a specific library (optional — omit to search all) |
-| `limit` | number | Max results, up to 20 (default: 5) |
-
-### Reference
-
-**`__IMPORTANT`** — Workflow guidance card with best practices for efficient search.
-
-## Documentation caching
-
-Fetching library documentation costs roughly 5,000+ tokens each time. Repeated lookups for the same library waste tokens on identical content.
-
-Eidetic solves this by caching documentation once and serving results at approximately 20 tokens per result.
-
-**Workflow:**
-
-```
-# 1. Fetch docs from any source (context7, WebFetch, etc.)
-# 2. Cache them
-index_document(
-  content="<fetched docs>",
-  source="context7:react/hooks",
-  library="react",
-  topic="hooks"
-)
-
-# 3. Search cheaply (~20 tokens/result vs ~5K+ tokens/fetch)
-search_documents(query="useEffect cleanup", library="react")
-
-# 4. Search across ALL cached libraries
-search_documents(query="auth token handling")
-```
-
-**Key features:**
-
-- **Per-library collections** — Each library gets its own collection (`doc_react`, `doc_langfuse`), searchable individually or together
-- **TTL-based freshness** — Default 7 days. Stale docs still return results but are flagged `[STALE]`
-- **Cross-library search** — Omit `library` to search across all cached documentation
-- **Upsert on refresh** — Re-caching the same source replaces old chunks automatically
-- **Automated workflow** — The `/eidetic:cache-docs` skill handles resolve, fetch, cache, and verify in one command
-
-## Session persistence
-
-Claude Code sessions are ephemeral. Decisions, context, and progress are lost between sessions.
-
-Eidetic provides two skills that persist and recover session context using semantically searchable notes.
-
-**`/wrapup` — end of session:**
-
-Extracts key facts from the conversation and writes a structured note to `~/.eidetic/notes/<project>/`:
-
-- Decisions made (with rationale and rejected alternatives)
-- File changes (exact paths and descriptions)
-- Numbers and metrics
-- Open questions (marked `OPEN` or `ASSUMED`)
-- Next actions and blockers
-
-The notes directory is then incrementally indexed for semantic search.
-
-**`/catchup` — start of next session:**
-
-Searches saved notes semantically, reads the most recent files, and presents a compact summary:
-
-```
-## Catchup: my-project
-
-**Last session:** 2026-02-18
-**Status:** Implemented auth middleware
-
-**Key context:**
-- JWT over sessions (rationale: stateless API)
-- Rate limiting strategy still OPEN
-- Next: add refresh tokens
-
-**Open items:** 2 | **Recent notes:** 3 files covering Feb 15-18
-```
-
-**Key features:**
-
-- **Semantic recovery** — Search notes by meaning, not filename
-- **Project-scoped** — Notes are organized per project under `~/.eidetic/notes/`
-- **Incremental indexing** — Re-indexing notes after `/wrapup` is near-instant
-- **Structured template** — Consistent format ensures reliable retrieval
-- **Filesystem fallback** — If Eidetic is unavailable, `/catchup` falls back to reading recent files directly
-
-## Claude Code plugin
-
-The `plugin/` directory provides a full Claude Code plugin with skills, hooks, and auto-start configuration.
-
-### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `/catchup` | Recover session context from previous notes |
-| `/wrapup` | Persist session state to searchable notes |
-| `/eidetic:search <query>` | Semantic code search |
-| `/eidetic:index [path]` | Index a codebase |
-| `/eidetic:cache-docs <library> [topic]` | Fetch, cache, and verify library documentation |
-
-### Hooks
-
-| Event | Trigger | Behavior |
-|-------|---------|----------|
-| `SessionStart` | Every session | Validates `OPENAI_API_KEY`, shows setup instructions if missing |
-| `PreToolUse` | `Grep` or `Read` calls | Advisory nudge to use `search_code` instead for exploration |
-
-Hooks are advisory — they add context messages but never block tool execution.
-
-### Auto-start
-
-The plugin's `.mcp.json` starts the MCP server automatically with each Claude Code session. The server passes through `OPENAI_API_KEY` from the environment.
-
-## Supported languages
-
-### AST-aware splitting (tree-sitter)
-
-Splits code into semantic chunks: functions, classes, methods, interfaces, type declarations.
-
-| Language | Extensions |
-|----------|-----------|
-| JavaScript | `.js`, `.jsx`, `.mjs`, `.cjs` |
-| TypeScript | `.ts`, `.tsx` |
-| Python | `.py`, `.pyi` |
-| Go | `.go` |
-| Java | `.java` |
-| Rust | `.rs` |
-| C/C++ | `.c`, `.h`, `.cpp`, `.cc`, `.cxx`, `.hpp` |
-| C# | `.cs` |
-
-### Line-based fallback
-
-All other supported extensions use line-based splitting (60 lines per chunk, 5 lines overlap). This covers 50+ additional file types:
-
-Scala, Ruby, PHP, Swift, Kotlin, Lua, Shell/Bash, SQL, R, Objective-C, Dart, Elixir, Erlang, Haskell, OCaml, Vue, Svelte, Astro, YAML, TOML, JSON, Markdown, HTML, CSS, SCSS, Less, and more.
-
-Custom extensions can be added per-index with the `customExtensions` parameter or globally with the `CUSTOM_EXTENSIONS` environment variable.
-
-## Embedding providers
-
-| Provider | Config | Default Model | API Key | Cost |
-|----------|--------|---------------|---------|------|
-| OpenAI | `EMBEDDING_PROVIDER=openai` | `text-embedding-3-small` | `OPENAI_API_KEY` (required) | ~$0.02/M tokens |
-| Ollama | `EMBEDDING_PROVIDER=ollama` | `nomic-embed-text` | None | Free (local) |
-| Local | `EMBEDDING_PROVIDER=local` | Configurable | Optional | Free (local) |
-
-The local provider works with any OpenAI-compatible embedding endpoint (LM Studio, vLLM, LocalAI). Set `OPENAI_BASE_URL` to point at your server.
-
-## Vector databases
-
-### Qdrant (default)
-
-Auto-provisioned via Docker if not running at `localhost:6333`. Zero configuration required.
-
-- **Hybrid search:** Dense vectors (cosine) + full-text (term frequency), fused with client-side RRF (k=60, alpha=0.7)
-- **Qdrant Cloud:** Set `QDRANT_URL` and `QDRANT_API_KEY` for hosted instances
-
-### Milvus (optional)
-
-Set `VECTORDB_PROVIDER=milvus` to use Milvus instead.
-
-- **Server-side RRF** with BM25 sparse vectors (Milvus >= 2.4)
-- Falls back to dense-only search on older versions
-- Requires manual install: `npm install @zilliz/milvus2-sdk-node`
-- **Zilliz Cloud:** Set `MILVUS_ADDRESS` and `MILVUS_TOKEN`
-
-## Configuration
+## ⚙️ Configuration
 
 All configuration is via environment variables. No config files.
 
+### Using Ollama (free, local)
+
+```bash
+export EMBEDDING_PROVIDER=ollama
+export MEMORY_LLM_PROVIDER=ollama
+# No API keys needed
+```
+
+Eidetic uses `nomic-embed-text` for embeddings and `llama3.2` for memory extraction by default with Ollama.
+
+### Full configuration reference
+
 | Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_API_KEY` | -- | Required for OpenAI embedding provider |
+|---|---|---|
+| `OPENAI_API_KEY` | _(required for openai)_ | OpenAI API key for embeddings and/or memory |
+| `ANTHROPIC_API_KEY` | _(required for anthropic memory)_ | Anthropic API key for memory LLM |
 | `EMBEDDING_PROVIDER` | `openai` | `openai`, `ollama`, or `local` |
-| `EMBEDDING_MODEL` | Per provider | Override embedding model name |
-| `OPENAI_BASE_URL` | -- | Custom OpenAI-compatible endpoint |
-| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama API endpoint |
-| `EMBEDDING_BATCH_SIZE` | `100` | Texts per embedding API call (1-2048) |
-| `INDEXING_CONCURRENCY` | `8` | Parallel file processing workers (1-32) |
+| `EMBEDDING_MODEL` | `text-embedding-3-small` (openai) / `nomic-embed-text` (ollama) | Embedding model name |
+| `EMBEDDING_BATCH_SIZE` | `100` | Batch size for embedding requests (1-2048) |
+| `INDEXING_CONCURRENCY` | `8` | Parallel file indexing workers (1-32) |
+| `OPENAI_BASE_URL` | _(none)_ | Custom OpenAI-compatible endpoint |
+| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama server URL |
 | `VECTORDB_PROVIDER` | `qdrant` | `qdrant` or `milvus` |
-| `QDRANT_URL` | `http://localhost:6333` | Qdrant endpoint |
-| `QDRANT_API_KEY` | -- | For Qdrant Cloud authentication |
-| `MILVUS_ADDRESS` | `localhost:19530` | Milvus gRPC address |
-| `MILVUS_TOKEN` | -- | For Zilliz Cloud authentication |
-| `EIDETIC_DATA_DIR` | `~/.eidetic` | Root directory for all Eidetic data |
-| `CUSTOM_EXTENSIONS` | `[]` | JSON array of additional file extensions |
-| `CUSTOM_IGNORE_PATTERNS` | `[]` | JSON array of additional ignore globs |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant server URL |
+| `QDRANT_API_KEY` | _(none)_ | Qdrant API key (for remote/cloud instances) |
+| `MILVUS_ADDRESS` | `localhost:19530` | Milvus server address |
+| `MILVUS_TOKEN` | _(none)_ | Milvus authentication token |
+| `EIDETIC_DATA_DIR` | `~/.eidetic/` | Data root for snapshots, memory DB, registry |
+| `CUSTOM_EXTENSIONS` | `[]` | JSON array of extra file extensions to index (e.g., `[".dart",".arb"]`) |
+| `CUSTOM_IGNORE_PATTERNS` | `[]` | JSON array of glob patterns to exclude |
+| `MEMORY_LLM_PROVIDER` | `anthropic` | `anthropic`, `openai`, or `ollama` |
+| `MEMORY_LLM_MODEL` | `claude-haiku-4-5-20251001` (anthropic) / `gpt-4o-mini` (openai) / `llama3.2` (ollama) | Model for memory extraction |
+| `MEMORY_LLM_BASE_URL` | _(none)_ | Custom base URL for memory LLM |
+| `MEMORY_LLM_API_KEY` | _(none)_ | API key override for memory LLM |
 
-## Architecture
+---
 
-**Pluggable interfaces:** Three boundaries define the system — `Embedding` (embed text to vectors), `VectorDB` (store and search), `Splitter` (split code into chunks). Each has a primary implementation and at least one alternative.
+## 🔧 Tool Reference
 
-**Embedding cache:** Two-layer cache reduces API calls. An in-memory LRU cache (10K entries) sits in front of a disk-based cache at `~/.eidetic/cache/`. Content is hashed (SHA-256) for deduplication.
+### 🔍 Code Search
 
-**Incremental indexing:** Content-hash snapshots in `~/.eidetic/snapshots/` track what has been indexed. On re-index, only files with changed hashes are re-embedded.
+| Tool | Description |
+|---|---|
+| `search_code` | Hybrid semantic search over indexed codebase. Returns compact table by default (~20 tokens/result). |
+| `index_codebase` | Index a directory. Supports `dryRun`, `force`, `customExtensions`, `customIgnorePatterns`. |
+| `list_indexed` | List all indexed codebases with file/chunk counts and status. |
+| `get_indexing_status` | Check indexing progress for a path or project. |
+| `clear_index` | Remove the search index for a codebase. |
+| `cleanup_vectors` | Remove orphaned vectors for deleted files. No re-embedding cost. |
+| `browse_structure` | Condensed structural map: classes, functions, methods with signatures, grouped by file. |
+| `list_symbols` | Compact symbol table with name/kind/file/line. Supports name, kind, and path filters. |
 
-**Concurrency safety:** A per-path mutex prevents concurrent indexing of the same codebase.
+### 📄 File Reading
 
-**Graceful degradation:** If initialization fails (missing API key, Qdrant unavailable), the server starts in setup-required mode. All tool calls return actionable setup instructions instead of crashing.
+| Tool | Description |
+|---|---|
+| `read_file` | Read file without line-number overhead. ~15-20% fewer tokens than built-in Read for code files. |
 
-**Data directory layout:**
+### 📚 Documentation Cache
 
-```
-~/.eidetic/
-  snapshots/          # File-hash snapshots for incremental indexing
-  cache/              # Embedding cache (disk layer)
-  qdrant-data/        # Qdrant persistent storage (if auto-provisioned)
-  notes/              # Session notes per project (/wrapup, /catchup)
-  registry.json       # Project name -> path mapping
-  doc-metadata.json   # Documentation cache metadata and TTL tracking
-```
+| Tool | Description |
+|---|---|
+| `index_document` | Cache external documentation for semantic search. Supports TTL for staleness tracking. |
+| `search_documents` | Search cached docs (~20 tokens/result vs ~5,000+ to re-fetch). |
 
-## Development
+### 🧠 Memory
+
+| Tool | Description |
+|---|---|
+| `add_memory` | LLM-extracted facts from text. Auto-deduplicates. Seven categories. |
+| `search_memory` | Semantic search over stored memories. Filterable by category. |
+| `list_memories` | List all memories, optionally filtered by category. |
+| `delete_memory` | Delete a specific memory by UUID. |
+| `memory_history` | View change history for a memory (additions, updates, deletions). |
+
+## 🌐 Supported Languages
+
+**AST-aware** -- functions and classes chunked intact via tree-sitter:
+
+<p>
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/React_(JSX/TSX)-61DAFB?style=flat-square&logo=react&logoColor=black" alt="JSX/TSX"/>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go"/>
+  <img src="https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java"/>
+  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust"/>
+  <img src="https://img.shields.io/badge/C-A8B9CC?style=flat-square&logo=c&logoColor=black" alt="C"/>
+  <img src="https://img.shields.io/badge/C++-00599C?style=flat-square&logo=cplusplus&logoColor=white" alt="C++"/>
+  <img src="https://img.shields.io/badge/C%23-512BD4?style=flat-square&logo=csharp&logoColor=white" alt="C#"/>
+</p>
+
+**Line-based fallback** -- sliding window chunking for everything else:
+
+<p>
+  <img src="https://img.shields.io/badge/Markdown-000000?style=flat-square&logo=markdown&logoColor=white" alt="Markdown"/>
+  <img src="https://img.shields.io/badge/YAML-CB171E?style=flat-square&logo=yaml&logoColor=white" alt="YAML"/>
+  <img src="https://img.shields.io/badge/JSON-000000?style=flat-square&logo=json&logoColor=white" alt="JSON"/>
+  <img src="https://img.shields.io/badge/Ruby-CC342D?style=flat-square&logo=ruby&logoColor=white" alt="Ruby"/>
+  <img src="https://img.shields.io/badge/PHP-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP"/>
+  <img src="https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift"/>
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/and_more...-30363d?style=flat-square" alt="and more"/>
+</p>
+
+---
+
+## 🛠️ Development
 
 ```bash
-npm install            # Install dependencies (tree-sitter has native bindings)
-npx tsc                # Build to dist/
-npm run dev            # Watch mode (tsx)
-npm start              # Run MCP server on stdio
-npm run typecheck      # Type-check only, no emit
+npm install          # install deps (tree-sitter has native bindings)
+npx tsc              # build to dist/
+npm run dev          # watch mode (tsx)
+npm start            # run MCP server on stdio
+npm run typecheck    # type-check only, no emit
 ```
-
-**Testing:**
 
 ```bash
-npm test               # Unit tests (vitest, mocked — no external services)
-npm run test:watch     # Watch mode
-npm run test:coverage  # With coverage
-npm run test:integration  # Requires running Qdrant + OPENAI_API_KEY
-npm run test:all       # Unit + integration
-npm run test:audit     # Custom code quality audits
+npm test                    # unit tests (vitest, no external services needed)
+npm run test:watch          # watch mode
+npm run test:coverage       # with coverage
+npm run test:integration    # requires Qdrant at localhost:6333 + OPENAI_API_KEY
+npm run test:all            # unit + integration
 ```
 
-Run a single test file: `npx vitest run src/core/tests/searcher.test.ts`
+**Commit format:** `type(scope): description`
 
-**Commits:** Conventional format — `type(scope): description`. Types: `feat`, `fix`, `docs`, `refactor`, `perf`, `chore`, `test`. Scopes: `embedding`, `vectordb`, `splitter`, `indexer`, `mcp`, `infra`, `config`.
+Types: `feat`, `fix`, `docs`, `refactor`, `perf`, `chore`, `test`
 
-## License
+Scopes: `embedding`, `vectordb`, `splitter`, `indexer`, `mcp`, `infra`, `config`
+
+---
+
+## 🙏 Acknowledgements
+
+Heavily inspired by [mem0](https://github.com/mem0ai/mem0), [claude-mem](https://github.com/thedotmack/claude-mem), and [claude-context](https://github.com/zilliztech/claude-context). Documentation retrieval powered by [context7](https://github.com/upstash/context7).
+
+---
+
+## 📄 License
 
 MIT
