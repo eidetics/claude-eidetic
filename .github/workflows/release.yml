@@ -27,6 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Configure git
         run: |
@@ -59,8 +60,19 @@ jobs:
       - name: Build
         run: npm run clean && npm run build
 
+      - name: Get npm OIDC token
+        id: oidc
+        run: |
+          TOKEN=$(curl -fsSL -X POST \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://registry.npmjs.org" \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).value))")
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Publish to npm
         run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ steps.oidc.outputs.token }}
 
       - name: Commit, tag, and push
         run: |
