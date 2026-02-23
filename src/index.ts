@@ -52,6 +52,7 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 - Re-indexing is incremental (only changed files re-embedded)
 - Use \`project\` param instead of \`path\` for convenience
 - Use \`get_indexing_status\` to check progress during long indexes
+- Use \`cleanup_vectors(path="...", dryRun=true)\` to preview stale vectors, then without dryRun to remove them (no embedding cost)
 
 **Cross-project search:**
 - Index multiple projects, each with its own path
@@ -168,6 +169,8 @@ async function main() {
         return handlers.handleDeleteMemory(args ?? {});
       case 'memory_history':
         return handlers.handleMemoryHistory(args ?? {});
+      case 'cleanup_vectors':
+        return handlers.handleCleanupVectors(args ?? {});
       case 'browse_structure':
         return handlers.handleBrowseStructure(args ?? {});
       case 'list_symbols':

@@ -1,6 +1,9 @@
 import { readFile, stat } from 'node:fs/promises';
 import { normalizePath, pathToCollectionName } from './paths.js';
 import { indexCodebase, previewCodebase, deleteSnapshot } from './core/indexer.js';
+import { cleanupVectors } from './core/cleanup.js';
+import { scanFiles, buildSnapshot, diffSnapshots } from './core/sync.js';
+import { loadSnapshot } from './core/snapshot-io.js';
 import { getConfig } from './config.js';
 import { searchCode, formatSearchResults, formatCompactResults } from './core/searcher.js';
 import { indexDocument } from './core/doc-indexer.js';
@@ -10,7 +13,7 @@ import { StateManager } from './state/snapshot.js';
 import { registerProject, resolveProject, listProjects } from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
 import type { VectorDB } from './vectordb/types.js';
-import { textResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults, formatMemoryActions, formatMemorySearchResults, formatMemoryList, formatMemoryHistory } from './format.js';
+import { textResult, formatCleanupResult, formatPreview, formatIndexResult, formatListIndexed, formatDocIndexResult, formatDocSearchResults, formatMemoryActions, formatMemorySearchResults, formatMemoryList, formatMemoryHistory } from './format.js';
 import type { MemoryStore } from './memory/store.js';
 
 function resolvePath(args: Record<string, unknown>): string | undefined {
@@ -198,6 +201,43 @@ export class ToolHandlers {
       return textResult('No codebases are currently indexed in this session.\n\nUse `index_codebase` to index a codebase first.');
     }
     return textResult(formatListIndexed(states));
+  }
+
+  async handleCleanupVectors(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
+    const normalizedPath = resolvePath(args);
+    if (!normalizedPath) return noPathError();
+    const dryRun = (args.dryRun as boolean) ?? false;
+    const config = getConfig();
+    const customExt = (args.customExtensions as string[]) ?? config.customExtensions;
+    const customIgnore = (args.customIgnorePatterns as string[]) ?? config.customIgnorePatterns;
+
+    return withMutex(normalizedPath, async () => {
+      try {
+        if (dryRun) {
+          const previousSnapshot = loadSnapshot(normalizedPath);
+          if (!previousSnapshot) {
+            return textResult(`Error: No snapshot found for ${normalizedPath}. Index the codebase first before running cleanup.`);
+          }
+          const filePaths = await scanFiles(normalizedPath, customExt, customIgnore);
+          const currentSnapshot = buildSnapshot(normalizedPath, filePaths);
+          const { removed } = diffSnapshots(previousSnapshot, currentSnapshot);
+          const dryResult = { removedFiles: removed, totalRemoved: removed.length, durationMs: 0 };
+          return textResult(formatCleanupResult(dryResult, normalizedPath, true));
+        }
+
+        const result = await cleanupVectors(
+          normalizedPath,
+          this.vectordb,
+          undefined,
+          customExt,
+          customIgnore,
+        );
+        return textResult(formatCleanupResult(result, normalizedPath, false));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return textResult(`Error during cleanup: ${message}`);
+      }
+    });
   }
 
   async handleIndexDocument(args: Record<string, unknown>): Promise<{ content: { type: string; text: string }[] }> {
