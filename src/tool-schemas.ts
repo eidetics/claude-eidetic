@@ -43,6 +43,8 @@ you MUST prompt the user to confirm whether to proceed with a force index.`;
 
 const SEARCH_DESCRIPTION = `\
 Search the indexed codebase using natural language queries.
+Prefer over Grep for conceptual/semantic queries — returns ~20 tokens/result vs ~100+ for Grep.
+Try before launching an Explore agent — faster and cheaper for understanding code.
 
 Provide either \`path\` (absolute) or \`project\` (name). Use \`list_indexed\` to see registered projects.
 
@@ -424,7 +426,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'browse_structure',
     description:
-      'Show a condensed structural map of the indexed codebase — classes, functions, methods with signatures, grouped by file. Useful for understanding architecture without reading every file.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
+      'Show a condensed structural map of the indexed codebase — classes, functions, methods with signatures, grouped by file.\nPrefer over Glob + Read cascades for understanding architecture — one call vs many.\n\nProvide either `path` (absolute) or `project` (name). Use `list_indexed` to see registered projects.',
     inputSchema: {
       type: 'object' as const,
       properties: {
