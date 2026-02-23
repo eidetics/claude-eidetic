@@ -60,24 +60,8 @@ jobs:
       - name: Build
         run: npm run clean && npm run build
 
-      - name: Get npm OIDC token
-        id: oidc
-        run: |
-          OIDC_TOKEN=$(curl -fsSL \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry" \
-            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).value))")
-          NPM_TOKEN=$(curl -fsSL -X POST https://registry.npmjs.org/-/npm/v1/login/oidc/session \
-            -H "Content-Type: application/json" \
-            -d "{\"idToken\":\"$OIDC_TOKEN\"}" \
-            | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).token))")
-          echo "::add-mask::$NPM_TOKEN"
-          echo "token=$NPM_TOKEN" >> "$GITHUB_OUTPUT"
-
       - name: Publish to npm
         run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ steps.oidc.outputs.token }}
 
       - name: Commit, tag, and push
         run: |
