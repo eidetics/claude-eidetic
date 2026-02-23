@@ -1,15 +1,21 @@
 # Eidetic — Semantic Code Search
 
-## Token Efficiency Rule
-Use search_code for codebase exploration. Use Read only for files you already know you need.
+## When to Use What
+| Need | Use | Not |
+|------|-----|-----|
+| Understand codebase architecture | `browse_structure()` | Glob + Read cascade |
+| Find implementations/patterns | `search_code(query)` | Grep with regex guessing |
+| Read a specific known file | `read_file(path)` | Read (blocked by hook) |
+| Exact string/regex match | Grep | — |
+| Find file by exact name | Glob | — |
 
-- search_code: ~50 tokens/result (semantic snippets)
-- Read: ~2000 tokens/file (full content)
+search_code: ~20 tokens/result. Grep: ~100+ tokens/result. Read: ~2000 tokens/file.
 
 ## Available Tools
 
 ### Code Search
 - `search_code(path, query)` — Semantic search over indexed codebase
+- `browse_structure(path)` — Architecture map: classes, functions, methods grouped by file
 - `index_codebase(path)` — Index a codebase directory
 - `list_indexed()` — Show all indexed codebases
 - `get_indexing_status(path)` — Check indexing progress

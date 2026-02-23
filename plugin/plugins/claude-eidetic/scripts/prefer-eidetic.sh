@@ -2,15 +2,7 @@
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name')
 
-if [ "$TOOL_NAME" = "Grep" ]; then
-  jq -n '{
-    "hookSpecificOutput": {
-      "hookEventName": "PreToolUse",
-      "permissionDecision": "allow",
-      "additionalContext": "REMINDER: For semantic/conceptual code search, prefer search_code MCP tool over Grep. search_code returns compact results at ~20 tokens/result vs ~100+ for Grep. Use Grep only for exact string/regex matches."
-    }
-  }'
-elif [ "$TOOL_NAME" = "Read" ]; then
+if [ "$TOOL_NAME" = "Read" ]; then
   # Extract file_path from tool input
   FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
   EXT="${FILE_PATH##*.}"

@@ -57,9 +57,20 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/search-guidance.sh\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
-        "matcher": "Grep|Read",
+        "matcher": "Read",
         "hooks": [
           {
             "type": "command",
