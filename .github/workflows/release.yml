@@ -61,7 +61,9 @@ jobs:
         run: npm run clean && npm run build
 
       - name: Publish to npm
-        run: npm publish --provenance
+        run: |
+          npm config delete //registry.npmjs.org/:_authToken
+          npm publish --provenance
 
       - name: Commit, tag, and push
         run: |
