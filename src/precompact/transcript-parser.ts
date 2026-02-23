@@ -21,7 +21,7 @@ export async function parseTranscript(
   sessionId: string,
   projectName: string,
   projectPath: string,
-  trigger: 'auto' | 'manual' = 'auto'
+  trigger: 'auto' | 'manual' | 'session_end' = 'auto'
 ): Promise<ExtractedSession> {
   const filesModified = new Set<string>();
   const bashCommands: string[] = [];
