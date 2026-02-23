@@ -33,7 +33,8 @@
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "test:eval": "tsx scripts/eval/recall-at-k.ts && tsx scripts/eval/fusion-lift.ts && tsx scripts/eval/ndcg.ts",
     "test:eval:generate": "tsx scripts/eval/generate-queries.ts",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -73,6 +74,10 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eidetics/claude-eidetic"
   },
   "license": "MIT"
 }
