@@ -125,7 +125,11 @@ function extractWebFetchFacts(url: string, responseStr: string): ExtractedFact[]
   const lower = responseStr.toLowerCase();
 
   // Detect 404 / not found
-  if (/\b404\b/.test(responseStr) || lower.includes('page not found') || lower.includes('not found')) {
+  if (
+    /\b404\b/.test(responseStr) ||
+    lower.includes('page not found') ||
+    lower.includes('not found')
+  ) {
     if (url) {
       facts.push({
         fact: `URL ${url} returned 404 / not found`,
