@@ -185,7 +185,7 @@ export class OpenAIEmbedding implements Embedding {
   private async callWithRetry(texts: string[]): Promise<EmbeddingVector[]> {
     let currentBatchSize = texts.length;
 
-    for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
+    for (let attempt = 0; attempt < RETRY_DELAYS.length + 1; attempt++) {
       try {
         const allResults: EmbeddingVector[] = [];
         for (let offset = 0; offset < texts.length; offset += currentBatchSize) {
@@ -198,7 +198,7 @@ export class OpenAIEmbedding implements Embedding {
         const status = (err as { status?: number }).status;
         const isRetryable = status !== undefined && RETRYABLE_STATUS.has(status);
 
-        if (!isRetryable || attempt >= RETRY_DELAYS.length - 1) {
+        if (!isRetryable || attempt >= RETRY_DELAYS.length) {
           throw new EmbeddingError(
             `Embedding API call failed after ${attempt + 1} attempt(s). Status: ${status ?? 'unknown'}`,
             err,
