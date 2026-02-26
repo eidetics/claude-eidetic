@@ -85,7 +85,9 @@ describe('MemoryStore', () => {
 
   describe('getHistory', () => {
     it('returns history entries for a memory', async () => {
-      const actions = await store.addMemory([{ fact: 'Prefers dark mode', category: 'preferences' }]);
+      const actions = await store.addMemory([
+        { fact: 'Prefers dark mode', category: 'preferences' },
+      ]);
       const id = actions[0].id;
 
       const entries = store.getHistory(id);

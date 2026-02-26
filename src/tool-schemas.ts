@@ -325,7 +325,8 @@ export const TOOL_DEFINITIONS = [
             properties: {
               fact: {
                 type: 'string',
-                description: 'A concise, self-contained statement of a developer preference or convention.',
+                description:
+                  'A concise, self-contained statement of a developer preference or convention.',
               },
               category: {
                 type: 'string',

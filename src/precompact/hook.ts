@@ -110,7 +110,6 @@ async function main(): Promise<void> {
   }
 }
 
-
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) {
