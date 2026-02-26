@@ -18,6 +18,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -62,21 +63,22 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Commit, tag, and push
+      - name: Open release PR
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          TAG="v$VERSION"
+          BRANCH="chore/release-v$VERSION"
           PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          git checkout -b "$BRANCH"
           git add package.json package-lock.json "$PLUGIN_JSON"
-          git commit -m "chore(release): $TAG"
-          git tag "$TAG"
-          git push origin main
-          git push origin "$TAG"
-
-      - name: Create GitHub release
-        run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          gh release create "v$VERSION" --generate-notes --title "v$VERSION"
+          git commit -m "chore(release): v$VERSION"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore(release): v$VERSION" \
+            --body "Automated release PR for v$VERSION. Merge to publish the git tag and GitHub Release." \
+            --base main \
+            --head "$BRANCH"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
