@@ -354,9 +354,10 @@ export class ToolHandlers {
       );
 
     const source = args.source as string | undefined;
+    const project = args.project as string | undefined;
 
     try {
-      const actions = await this.memoryStore.addMemory(facts, source);
+      const actions = await this.memoryStore.addMemory(facts, source, project);
       return textResult(formatMemoryActions(actions));
     } catch (err) {
       const message = getErrorMessage(err);
@@ -375,9 +376,10 @@ export class ToolHandlers {
 
     const limit = (args.limit as number | undefined) ?? 10;
     const category = args.category as string | undefined;
+    const project = args.project as string | undefined;
 
     try {
-      const results = await this.memoryStore.searchMemory(query, limit, category);
+      const results = await this.memoryStore.searchMemory(query, limit, category, project);
       return textResult(formatMemorySearchResults(results, query));
     } catch (err) {
       const message = getErrorMessage(err);
@@ -392,9 +394,10 @@ export class ToolHandlers {
 
     const category = args.category as string | undefined;
     const limit = (args.limit as number | undefined) ?? 50;
+    const project = args.project as string | undefined;
 
     try {
-      const results = await this.memoryStore.listMemories(category, limit);
+      const results = await this.memoryStore.listMemories(category, limit, project);
       return textResult(formatMemoryList(results));
     } catch (err) {
       const message = getErrorMessage(err);

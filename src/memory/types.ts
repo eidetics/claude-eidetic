@@ -4,6 +4,9 @@ export interface MemoryItem {
   hash: string;
   category: string;
   source: string;
+  project: string;
+  access_count: number;
+  last_accessed: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,6 +20,7 @@ export interface MemoryAction {
   previous?: string;
   category?: string;
   source?: string;
+  project?: string;
 }
 
 export interface ReconcileResult {
@@ -28,4 +32,5 @@ export interface ReconcileResult {
 export interface ExtractedFact {
   fact: string;
   category: string;
+  project?: string;
 }

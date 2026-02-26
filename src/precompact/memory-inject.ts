@@ -57,7 +57,12 @@ async function main(): Promise<void> {
     const history = new MemoryHistory(getMemoryDbPath());
     const store = new MemoryStore(embedding, vectordb, history);
 
-    const memories = await store.searchMemory(`${projectName} development knowledge`, 7);
+    const memories = await store.searchMemory(
+      `${projectName} development knowledge`,
+      7,
+      undefined,
+      projectName,
+    );
     if (memories.length === 0) {
       return;
     }
