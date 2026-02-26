@@ -140,7 +140,7 @@ function extractWebFetchFacts(url: string, responseStr: string): ExtractedFact[]
   }
 
   // Detect redirect notice
-  const redirectMatch = responseStr.match(/redirected?\s+to\s+(https?:\/\/\S+)/i);
+  const redirectMatch = /redirected?\s+to\s+(https?:\/\/\S+)/i.exec(responseStr);
   if (redirectMatch) {
     facts.push({
       fact: `URL ${url} redirects to ${redirectMatch[1]}`,
@@ -193,9 +193,8 @@ function extractBashFacts(command: string, responseStr: string): ExtractedFact[]
   }
 
   // Detect successful installs
-  const installMatch = command.match(
-    /(?:npm|yarn|pnpm|pip|pip3|brew|apt|apt-get|cargo)\s+(?:install|add|i)\s+(.+)/,
-  );
+  const installMatch =
+    /(?:npm|yarn|pnpm|pip|pip3|brew|apt|apt-get|cargo)\s+(?:install|add|i)\s+(.+)/.exec(command);
   if (installMatch) {
     const pkg = installMatch[1].trim().slice(0, 80);
     const manager = command.split(' ')[0];
@@ -245,7 +244,9 @@ function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     process.stdin.on('data', (chunk: Buffer) => chunks.push(chunk));
-    process.stdin.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    process.stdin.on('end', () => {
+      resolve(Buffer.concat(chunks).toString('utf-8'));
+    });
     process.stdin.on('error', reject);
   });
 }
