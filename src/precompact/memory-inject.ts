@@ -25,18 +25,26 @@ async function main(): Promise<void> {
     const projectName = path.basename(projectPath);
 
     // Dynamic imports — avoid loading heavy deps if not needed
-    const [{ loadConfig }, { createEmbedding }, { QdrantVectorDB }, { MemoryHistory }, { MemoryStore }] =
-      await Promise.all([
-        import('../config.js'),
-        import('../embedding/factory.js'),
-        import('../vectordb/qdrant.js'),
-        import('../memory/history.js'),
-        import('../memory/store.js'),
-      ]);
+    const [{ loadConfig }, { createEmbedding }, { MemoryHistory }, { MemoryStore }] = await Promise.all([
+      import('../config.js'),
+      import('../embedding/factory.js'),
+      import('../memory/history.js'),
+      import('../memory/store.js'),
+    ]);
 
     const config = loadConfig();
     const embedding = createEmbedding(config);
-    const vectordb = new QdrantVectorDB();
+    await embedding.initialize();
+
+    // Respect VECTORDB_PROVIDER — connect without bootstrapping (hook assumes DB is already running)
+    let vectordb;
+    if (config.vectordbProvider === 'milvus') {
+      const { MilvusVectorDB } = await import('../vectordb/milvus.js');
+      vectordb = new MilvusVectorDB();
+    } else {
+      const { QdrantVectorDB } = await import('../vectordb/qdrant.js');
+      vectordb = new QdrantVectorDB(config.qdrantUrl, config.qdrantApiKey);
+    }
 
     // Quick-exit if no memory collection exists
     const exists = await vectordb.hasCollection('eidetic_memory');
