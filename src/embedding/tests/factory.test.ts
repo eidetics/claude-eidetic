@@ -20,11 +20,6 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
     eideticDataDir: '/tmp/eidetic-test',
     customExtensions: [],
     customIgnorePatterns: [],
-    memoryLlmProvider: 'openai',
-    memoryLlmModel: 'gpt-4o-mini',
-    memoryLlmBaseUrl: undefined,
-    memoryLlmApiKey: undefined,
-    anthropicApiKey: '',
     ...overrides,
   };
 }

@@ -312,14 +312,39 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'add_memory',
     description:
-      'Extract and store developer knowledge from text. Uses LLM to identify facts about coding style, tools, architecture, conventions, debugging insights, and workflow preferences. Automatically deduplicates against existing memories.',
+      'Store pre-extracted developer knowledge facts. Before calling, extract facts yourself from the relevant content. Each fact should be a concise, self-contained statement about coding style, tools, architecture, conventions, debugging insights, or workflow preferences. Automatically deduplicates against existing memories.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        content: {
-          type: 'string',
+        facts: {
+          type: 'array',
           description:
-            'Text containing developer knowledge to extract and store (conversation snippets, notes, preferences).',
+            'Array of facts to store. Extract these yourself before calling. Each fact must be a concise, self-contained statement.',
+          items: {
+            type: 'object',
+            properties: {
+              fact: {
+                type: 'string',
+                description:
+                  'A concise, self-contained statement of a developer preference or convention.',
+              },
+              category: {
+                type: 'string',
+                description:
+                  'Category: coding_style, tools, architecture, conventions, debugging, workflow, or preferences.',
+                enum: [
+                  'coding_style',
+                  'tools',
+                  'architecture',
+                  'conventions',
+                  'debugging',
+                  'workflow',
+                  'preferences',
+                ],
+              },
+            },
+            required: ['fact', 'category'],
+          },
         },
         source: {
           type: 'string',
@@ -327,7 +352,7 @@ export const TOOL_DEFINITIONS = [
             'Optional source identifier (e.g., "conversation", "claude-code", "user-note").',
         },
       },
-      required: ['content'],
+      required: ['facts'],
     },
   },
   {

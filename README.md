@@ -16,8 +16,7 @@ claude plugin install eidetics/claude-eidetic
 ```
 
 ```bash
-export OPENAI_API_KEY=sk-...         # for embeddings (default)
-export ANTHROPIC_API_KEY=sk-ant-...  # for memory extraction (default)
+export OPENAI_API_KEY=sk-...  # for embeddings (default)
 ```
 
 Index your codebase once, then search by meaning:
@@ -157,15 +156,12 @@ Add to your `.mcp.json`:
       "command": "npx",
       "args": ["-y", "claude-eidetic"],
       "env": {
-        "OPENAI_API_KEY": "sk-...",
-        "ANTHROPIC_API_KEY": "sk-ant-..."
+        "OPENAI_API_KEY": "sk-..."
       }
     }
   }
 }
 ```
-
-`ANTHROPIC_API_KEY` is needed for the memory LLM (default provider). Omit it if using `MEMORY_LLM_PROVIDER=openai` or `ollama`.
 
 ### Global install
 
@@ -184,7 +180,7 @@ npm install && npx tsc && npm start
 ### Requirements
 
 - Node.js >= 20.0.0
-- An API key (OpenAI for embeddings, Anthropic for memory extraction, or Ollama for both free)
+- An API key (OpenAI for embeddings, or Ollama for free local embeddings)
 - Docker (optional): Qdrant auto-provisions via Docker if not already running
 - C/C++ build tools: required by tree-sitter native bindings (`node-gyp`)
 
@@ -207,8 +203,7 @@ export MEMORY_LLM_PROVIDER=ollama
 
 | Variable | Default | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | _(required for openai)_ | OpenAI API key for embeddings and/or memory |
-| `ANTHROPIC_API_KEY` | _(required for anthropic memory)_ | Anthropic API key for memory LLM |
+| `OPENAI_API_KEY` | _(required for openai)_ | OpenAI API key for embeddings |
 | `EMBEDDING_PROVIDER` | `openai` | `openai`, `ollama`, or `local` |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` (openai) / `nomic-embed-text` (ollama) | Embedding model name |
 | `EMBEDDING_BATCH_SIZE` | `100` | Batch size for embedding requests (1-2048) |
@@ -223,10 +218,6 @@ export MEMORY_LLM_PROVIDER=ollama
 | `EIDETIC_DATA_DIR` | `~/.eidetic/` | Data root for snapshots, memory DB, registry |
 | `CUSTOM_EXTENSIONS` | `[]` | JSON array of extra file extensions to index (e.g., `[".dart",".arb"]`) |
 | `CUSTOM_IGNORE_PATTERNS` | `[]` | JSON array of glob patterns to exclude |
-| `MEMORY_LLM_PROVIDER` | `anthropic` | `anthropic`, `openai`, or `ollama` |
-| `MEMORY_LLM_MODEL` | `claude-haiku-4-5-20251001` (anthropic) / `gpt-4o-mini` (openai) / `llama3.2` (ollama) | Model for memory extraction |
-| `MEMORY_LLM_BASE_URL` | _(none)_ | Custom base URL for memory LLM |
-| `MEMORY_LLM_API_KEY` | _(none)_ | API key override for memory LLM |
 
 </details>
 

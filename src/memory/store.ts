@@ -3,8 +3,6 @@ import type { Embedding } from '../embedding/types.js';
 import type { VectorDB } from '../vectordb/types.js';
 import type { MemoryItem, MemoryAction, ExtractedFact } from './types.js';
 import { MemoryHistory } from './history.js';
-import { chatCompletion } from './llm.js';
-import { buildSystemPrompt, buildExtractionPrompt } from './prompts.js';
 import { hashMemory, reconcile, type ExistingMatch } from './reconciler.js';
 
 const COLLECTION_NAME = 'eidetic_memory';
@@ -35,10 +33,9 @@ export class MemoryStore {
     this.initialized = true;
   }
 
-  async addMemory(content: string, source?: string): Promise<MemoryAction[]> {
+  async addMemory(facts: ExtractedFact[], source?: string): Promise<MemoryAction[]> {
     await this.ensureCollection();
 
-    const facts = await this.extractFacts(content);
     if (facts.length === 0) return [];
 
     const actions: MemoryAction[] = [];
@@ -108,26 +105,6 @@ export class MemoryStore {
 
   getHistory(memoryId: string) {
     return this.history.getHistory(memoryId);
-  }
-
-  private async extractFacts(content: string): Promise<ExtractedFact[]> {
-    const userMessage = buildExtractionPrompt(content);
-    const response = await chatCompletion(buildSystemPrompt(), userMessage);
-
-    try {
-      const parsed = JSON.parse(response);
-      const facts = parsed.facts;
-      if (!Array.isArray(facts)) return [];
-      return facts.filter(
-        (f: unknown): f is ExtractedFact =>
-          typeof f === 'object' &&
-          f !== null &&
-          typeof (f as ExtractedFact).fact === 'string' &&
-          typeof (f as ExtractedFact).category === 'string',
-      );
-    } catch {
-      return [];
-    }
   }
 
   private async processFact(fact: ExtractedFact, source?: string): Promise<MemoryAction | null> {

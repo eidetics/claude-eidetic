@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryStore } from '../store.js';
 import { MemoryHistory } from '../history.js';
 import { MockEmbedding } from '../../__tests__/mock-embedding.js';
@@ -6,14 +6,6 @@ import { MockVectorDB } from '../../__tests__/mock-vectordb.js';
 import { join } from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { chatCompletion } from '../llm.js';
-
-// Mock the LLM module
-vi.mock('../llm.js', () => ({
-  chatCompletion: vi.fn(),
-}));
-
-const mockChatCompletion = vi.mocked(chatCompletion);
 
 describe('MemoryStore', () => {
   let embedding: MockEmbedding;
@@ -28,18 +20,13 @@ describe('MemoryStore', () => {
     tmpDir = mkdtempSync(join(tmpdir(), 'eidetic-test-'));
     history = new MemoryHistory(join(tmpDir, 'test.db'));
     store = new MemoryStore(embedding, vectordb, history);
-    vi.clearAllMocks();
   });
 
   describe('addMemory', () => {
-    it('extracts facts and stores them', async () => {
-      mockChatCompletion.mockResolvedValueOnce(
-        JSON.stringify({
-          facts: [{ fact: 'Indentation style is tabs not spaces', category: 'coding_style' }],
-        }),
-      );
-
-      const actions = await store.addMemory('I always use tabs');
+    it('stores provided facts', async () => {
+      const actions = await store.addMemory([
+        { fact: 'Indentation style is tabs not spaces', category: 'coding_style' },
+      ]);
 
       expect(actions).toHaveLength(1);
       expect(actions[0].event).toBe('ADD');
@@ -48,28 +35,27 @@ describe('MemoryStore', () => {
       expect(actions[0].id).toBeTruthy();
     });
 
-    it('returns empty array when no facts extracted', async () => {
-      mockChatCompletion.mockResolvedValueOnce(JSON.stringify({ facts: [] }));
-
-      const actions = await store.addMemory('hello world');
+    it('returns empty array when given empty facts array', async () => {
+      const actions = await store.addMemory([]);
       expect(actions).toHaveLength(0);
     });
 
-    it('handles malformed LLM response gracefully', async () => {
-      mockChatCompletion.mockResolvedValueOnce('not valid json');
+    it('stores multiple facts', async () => {
+      const actions = await store.addMemory([
+        { fact: 'Uses TypeScript strict mode', category: 'conventions' },
+        { fact: 'Prefers pnpm over npm', category: 'tools' },
+      ]);
 
-      const actions = await store.addMemory('some content');
-      expect(actions).toHaveLength(0);
+      expect(actions).toHaveLength(2);
+      expect(actions[0].event).toBe('ADD');
+      expect(actions[1].event).toBe('ADD');
     });
 
     it('passes source to stored memories', async () => {
-      mockChatCompletion.mockResolvedValueOnce(
-        JSON.stringify({
-          facts: [{ fact: 'Uses TypeScript strict mode', category: 'conventions' }],
-        }),
+      const actions = await store.addMemory(
+        [{ fact: 'Uses TypeScript strict mode', category: 'conventions' }],
+        'conversation',
       );
-
-      const actions = await store.addMemory('We use TS strict mode', 'conversation');
 
       expect(actions).toHaveLength(1);
       expect(actions[0].source).toBe('conversation');
@@ -78,21 +64,13 @@ describe('MemoryStore', () => {
 
   describe('deleteMemory', () => {
     it('deletes an existing memory and logs history', async () => {
-      // First add a memory
-      mockChatCompletion.mockResolvedValueOnce(
-        JSON.stringify({
-          facts: [{ fact: 'Use React 19', category: 'tools' }],
-        }),
-      );
-      const actions = await store.addMemory('We use React 19');
+      const actions = await store.addMemory([{ fact: 'Use React 19', category: 'tools' }]);
       expect(actions).toHaveLength(1);
       const memoryId = actions[0].id;
 
-      // Delete it
       const deleted = await store.deleteMemory(memoryId);
       expect(deleted).toBe(true);
 
-      // Check history
       const historyEntries = history.getHistory(memoryId);
       expect(historyEntries).toHaveLength(2); // ADD + DELETE
       expect(historyEntries[0].event).toBe('ADD');
@@ -107,13 +85,9 @@ describe('MemoryStore', () => {
 
   describe('getHistory', () => {
     it('returns history entries for a memory', async () => {
-      mockChatCompletion.mockResolvedValueOnce(
-        JSON.stringify({
-          facts: [{ fact: 'Prefers dark mode', category: 'preferences' }],
-        }),
-      );
-
-      const actions = await store.addMemory('I like dark mode');
+      const actions = await store.addMemory([
+        { fact: 'Prefers dark mode', category: 'preferences' },
+      ]);
       const id = actions[0].id;
 
       const entries = store.getHistory(id);

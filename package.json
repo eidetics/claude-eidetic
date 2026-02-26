@@ -37,7 +37,6 @@
     "release": "bash scripts/release.sh"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@qdrant/js-client-rest": "^1.13.0",
     "better-sqlite3": "^12.6.2",
