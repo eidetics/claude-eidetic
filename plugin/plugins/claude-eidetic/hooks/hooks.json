@@ -80,6 +80,16 @@
         ]
       },
       {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/prefer-search.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "query-docs|query_docs|resolve-library-id|resolve_library_id|WebFetch",
         "hooks": [
           {
