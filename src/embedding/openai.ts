@@ -185,7 +185,7 @@ export class OpenAIEmbedding implements Embedding {
   private async callWithRetry(texts: string[]): Promise<EmbeddingVector[]> {
     let currentBatchSize = texts.length;
 
-    for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    for (let attempt = 0; attempt < RETRY_DELAYS.length + 1; attempt++) {
       try {
         const allResults: EmbeddingVector[] = [];
         for (let offset = 0; offset < texts.length; offset += currentBatchSize) {
