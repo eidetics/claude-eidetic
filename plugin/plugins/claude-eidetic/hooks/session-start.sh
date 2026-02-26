@@ -9,3 +9,6 @@ fi
 
 # Inject Tier-0 context from most recent session (non-blocking, best-effort)
 node "${CLAUDE_PLUGIN_ROOT}/dist/precompact/tier0-inject.js" 2>/dev/null || true
+
+# Inject stored memories from vector DB (non-blocking, best-effort)
+node "${CLAUDE_PLUGIN_ROOT}/dist/precompact/memory-inject.js" 2>/dev/null || true

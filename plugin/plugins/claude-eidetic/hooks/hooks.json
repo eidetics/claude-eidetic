@@ -44,6 +44,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/memory-nudge.sh\"",
+            "timeout": 2
+          }
+        ]
       }
     ],
     "Stop": [
