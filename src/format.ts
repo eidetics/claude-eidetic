@@ -188,7 +188,9 @@ export function formatMemoryActions(actions: MemoryAction[]): string {
   for (const action of actions) {
     const icon = action.event === 'ADD' ? '+' : '~';
     lines.push(`  ${icon} [${action.event}] ${action.memory}`);
-    lines.push(`    Category: ${action.category ?? 'unknown'} | ID: ${action.id}`);
+    const projectTag =
+      action.project && action.project !== 'global' ? ` | Project: ${action.project}` : '';
+    lines.push(`    Category: ${action.category ?? 'unknown'} | ID: ${action.id}${projectTag}`);
     if (action.previous) {
       lines.push(`    Previous: ${action.previous}`);
     }
@@ -207,8 +209,12 @@ export function formatMemorySearchResults(items: MemoryItem[], query: string): s
   for (let i = 0; i < items.length; i++) {
     const m = items[i];
     lines.push(`${i + 1}. ${m.memory}`);
-    lines.push(`   Category: ${m.category} | ID: ${m.id}`);
+    const projectTag = m.project && m.project !== 'global' ? ` | Project: ${m.project}` : '';
+    lines.push(`   Category: ${m.category} | ID: ${m.id}${projectTag}`);
     if (m.source) lines.push(`   Source: ${m.source}`);
+    if (m.access_count > 0) {
+      lines.push(`   Accessed: ${m.access_count}x | Last: ${m.last_accessed.slice(0, 10)}`);
+    }
     if (m.created_at || m.updated_at) {
       lines.push(
         `   Created: ${m.created_at || 'unknown'} | Updated: ${m.updated_at || 'unknown'}`,
@@ -242,7 +248,11 @@ export function formatMemoryList(items: MemoryItem[]): string {
     lines.push(`### ${category} (${memories.length})`);
     for (const m of memories) {
       const updatedDate = m.updated_at ? ` (updated: ${m.updated_at.slice(0, 10)})` : '';
-      lines.push(`  - ${m.memory}  [${m.id.slice(0, 8)}...]${updatedDate}`);
+      const projectTag = m.project && m.project !== 'global' ? ` [${m.project}]` : '';
+      const accessTag = m.access_count > 0 ? ` (accessed: ${m.access_count}x)` : '';
+      lines.push(
+        `  - ${m.memory}  [${m.id.slice(0, 8)}...]${updatedDate}${projectTag}${accessTag}`,
+      );
     }
     lines.push('');
   }

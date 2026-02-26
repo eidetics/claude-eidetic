@@ -351,6 +351,11 @@ export const TOOL_DEFINITIONS = [
           description:
             'Optional source identifier (e.g., "conversation", "claude-code", "user-note").',
         },
+        project: {
+          type: 'string',
+          description:
+            'Optional project name to scope this memory (e.g., "my-app"). Defaults to "global" for cross-project memories.',
+        },
       },
       required: ['facts'],
     },
@@ -358,7 +363,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: 'search_memory',
     description:
-      'Search stored developer memories using natural language. Returns semantically similar memories ranked by relevance.',
+      'Search stored developer memories using natural language. Returns semantically similar memories ranked by relevance. When a project is specified, project-specific memories are ranked higher.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -386,13 +391,18 @@ export const TOOL_DEFINITIONS = [
             'preferences',
           ],
         },
+        project: {
+          type: 'string',
+          description:
+            'Optional project name to boost project-specific memories in results (e.g., "my-app"). Cross-project memories still appear but ranked lower.',
+        },
       },
       required: ['query'],
     },
   },
   {
     name: 'list_memories',
-    description: 'List all stored developer memories, optionally filtered by category.',
+    description: 'List all stored developer memories, optionally filtered by category or project.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -415,6 +425,11 @@ export const TOOL_DEFINITIONS = [
           description: 'Maximum number of memories to return.',
           default: 50,
           maximum: 100,
+        },
+        project: {
+          type: 'string',
+          description:
+            'Optional project name to filter memories. Returns only project-specific and global memories.',
         },
       },
       required: [],

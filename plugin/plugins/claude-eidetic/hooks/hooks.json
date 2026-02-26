@@ -46,12 +46,12 @@
         ]
       },
       {
-        "matcher": "WebFetch",
+        "matcher": "WebFetch|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/memory-nudge.sh\"",
-            "timeout": 2
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/hooks/post-tool-extract.js\"",
+            "timeout": 10
           }
         ]
       }

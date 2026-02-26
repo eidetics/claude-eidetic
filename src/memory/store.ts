@@ -7,13 +7,15 @@ import { hashMemory, reconcile, type ExistingMatch } from './reconciler.js';
 
 const COLLECTION_NAME = 'eidetic_memory';
 const SEARCH_CANDIDATES = 5;
+const ACCESS_BUMP_COUNT = 5;
 
 // Data model mapping (reuses existing VectorDB/SearchResult fields):
 //   content      → memory text (full-text search)
 //   relativePath → memory UUID (enables deleteByPath for single-memory deletion)
 //   fileExtension→ category (enables extensionFilter for category filtering)
 //   language     → source
-//   Additional payload: hash, memory, category, source, created_at, updated_at
+//   Additional payload: hash, memory, category, source, project,
+//                       access_count, last_accessed, created_at, updated_at
 
 export class MemoryStore {
   private initialized = false;
@@ -33,7 +35,11 @@ export class MemoryStore {
     this.initialized = true;
   }
 
-  async addMemory(facts: ExtractedFact[], source?: string): Promise<MemoryAction[]> {
+  async addMemory(
+    facts: ExtractedFact[],
+    source?: string,
+    project = 'global',
+  ): Promise<MemoryAction[]> {
     await this.ensureCollection();
 
     if (facts.length === 0) return [];
@@ -41,21 +47,30 @@ export class MemoryStore {
     const actions: MemoryAction[] = [];
 
     for (const fact of facts) {
-      const action = await this.processFact(fact, source);
+      const action = await this.processFact(fact, source, project);
       if (action) actions.push(action);
     }
 
     return actions;
   }
 
-  async searchMemory(query: string, limit = 10, category?: string): Promise<MemoryItem[]> {
+  async searchMemory(
+    query: string,
+    limit = 10,
+    category?: string,
+    project?: string,
+  ): Promise<MemoryItem[]> {
     await this.ensureCollection();
 
     const queryVector = await this.embedding.embed(query);
+
+    // Fetch extra candidates for project re-ranking when project is specified
+    const fetchLimit = project ? limit * 2 : limit;
+
     const results = await this.vectordb.search(COLLECTION_NAME, {
       queryVector,
       queryText: query,
-      limit,
+      limit: fetchLimit,
       ...(category ? { extensionFilter: [category] } : {}),
     });
 
@@ -67,10 +82,23 @@ export class MemoryStore {
       if (!point) continue;
       items.push(payloadToMemoryItem(id, point.payload));
     }
-    return items;
+
+    // Project re-ranking: boost project-matching items to the front
+    let ranked = items;
+    if (project) {
+      const projectItems = items.filter((m) => m.project === project);
+      const otherItems = items.filter((m) => m.project !== project);
+      ranked = [...projectItems, ...otherItems].slice(0, limit);
+    }
+
+    // Fire-and-forget: bump access_count and last_accessed for top results
+    const topIds = ranked.slice(0, ACCESS_BUMP_COUNT).map((m) => m.id);
+    void this.bumpAccessCounts(topIds);
+
+    return ranked;
   }
 
-  async listMemories(category?: string, limit = 50): Promise<MemoryItem[]> {
+  async listMemories(category?: string, limit = 50, project?: string): Promise<MemoryItem[]> {
     await this.ensureCollection();
 
     const queryVector = await this.embedding.embed('developer knowledge');
@@ -88,6 +116,12 @@ export class MemoryStore {
       if (!point) continue;
       items.push(payloadToMemoryItem(id, point.payload));
     }
+
+    // Filter by project if specified
+    if (project) {
+      return items.filter((m) => m.project === project || m.project === 'global');
+    }
+
     return items;
   }
 
@@ -107,7 +141,29 @@ export class MemoryStore {
     return this.history.getHistory(memoryId);
   }
 
-  private async processFact(fact: ExtractedFact, source?: string): Promise<MemoryAction | null> {
+  private async bumpAccessCounts(ids: string[]): Promise<void> {
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      try {
+        const point = await this.vectordb.getById(COLLECTION_NAME, id);
+        if (!point) continue;
+        const currentCount = Number(point.payload.access_count ?? 0);
+        await this.vectordb.updatePoint(COLLECTION_NAME, id, point.vector, {
+          ...point.payload,
+          access_count: currentCount + 1,
+          last_accessed: now,
+        });
+      } catch {
+        // Silently ignore — access tracking is a best-effort utility signal
+      }
+    }
+  }
+
+  private async processFact(
+    fact: ExtractedFact,
+    source?: string,
+    project = 'global',
+  ): Promise<MemoryAction | null> {
     const hash = hashMemory(fact.fact);
     const vector = await this.embedding.embed(fact.fact);
 
@@ -137,10 +193,14 @@ export class MemoryStore {
     if (decision.action === 'NONE') return null;
 
     const now = new Date().toISOString();
+    const effectiveProject = fact.project ?? project;
 
     if (decision.action === 'UPDATE' && decision.existingId) {
       const existingPoint = await this.vectordb.getById(COLLECTION_NAME, decision.existingId);
       const createdAt = String(existingPoint?.payload.created_at ?? now);
+      // Preserve existing access tracking
+      const existingAccessCount = Number(existingPoint?.payload.access_count ?? 0);
+      const existingLastAccessed = String(existingPoint?.payload.last_accessed ?? '');
 
       await this.vectordb.updatePoint(COLLECTION_NAME, decision.existingId, vector, {
         content: fact.fact,
@@ -153,6 +213,9 @@ export class MemoryStore {
         memory: fact.fact,
         category: fact.category,
         source: source ?? '',
+        project: effectiveProject,
+        access_count: existingAccessCount,
+        last_accessed: existingLastAccessed,
         created_at: createdAt,
         updated_at: now,
       });
@@ -173,6 +236,7 @@ export class MemoryStore {
         previous: decision.existingMemory,
         category: fact.category,
         source,
+        project: effectiveProject,
       };
     }
 
@@ -189,6 +253,9 @@ export class MemoryStore {
       memory: fact.fact,
       category: fact.category,
       source: source ?? '',
+      project: effectiveProject,
+      access_count: 0,
+      last_accessed: '',
       created_at: now,
       updated_at: now,
     });
@@ -201,6 +268,7 @@ export class MemoryStore {
       memory: fact.fact,
       category: fact.category,
       source,
+      project: effectiveProject,
     };
   }
 }
@@ -212,6 +280,9 @@ function payloadToMemoryItem(id: string, payload: Record<string, unknown>): Memo
     hash: String(payload.hash ?? ''),
     category: String(payload.category ?? payload.fileExtension ?? ''),
     source: String(payload.source ?? payload.language ?? ''),
+    project: String(payload.project ?? 'global'),
+    access_count: Number(payload.access_count ?? 0),
+    last_accessed: String(payload.last_accessed ?? ''),
     created_at: String(payload.created_at ?? ''),
     updated_at: String(payload.updated_at ?? ''),
   };
