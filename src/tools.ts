@@ -347,7 +347,7 @@ export class ToolHandlers {
   ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
-    const facts = args.facts as Array<{ fact: string; category: string }> | undefined;
+    const facts = args.facts as { fact: string; category: string }[] | undefined;
     if (!facts || !Array.isArray(facts) || facts.length === 0)
       return textResult(
         'Error: "facts" is required. Provide an array of pre-extracted facts with fact and category fields.',
