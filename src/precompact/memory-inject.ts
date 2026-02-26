@@ -99,4 +99,4 @@ export function formatMemoryContext(memories: MemoryItem[]): string {
   return lines.join('\n');
 }
 
-main();
+void main();
