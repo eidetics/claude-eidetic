@@ -3,7 +3,7 @@
  * Hook entry point for PreCompact and SessionEnd events.
  *
  * PreCompact: Parses transcript, writes session note, updates index, spawns background indexer.
- * SessionEnd: Same as PreCompact + runs memory extraction pipeline (semantic facts → Qdrant).
+ * SessionEnd: Same as PreCompact (writes session note if not already captured by PreCompact).
  */
 
 import { z } from 'zod';
@@ -14,7 +14,6 @@ import { writeSessionNote } from './note-writer.js';
 import { updateSessionIndex, readSessionIndex } from './tier0-writer.js';
 import { spawnBackgroundIndexer } from './session-indexer.js';
 import { getNotesDir, getProjectId } from './utils.js';
-import type { ExtractedSession } from './types.js';
 
 // Resolve index-runner path at module boundary (follows project convention)
 const __filename = fileURLToPath(import.meta.url);
@@ -88,15 +87,11 @@ async function main(): Promise<void> {
         spawnBackgroundIndexer(notesDir, INDEX_RUNNER_PATH);
       }
 
-      // Run memory extraction (best-effort — graceful failure if Qdrant unavailable)
-      const memoryActions = await extractMemories(session);
-
       outputSuccess({
         noteFile,
         skippedNote,
         filesModified: session.filesModified.length,
         tasksCreated: session.tasksCreated.length,
-        memoriesExtracted: memoryActions,
       });
     } else {
       // PreCompact: original flow
@@ -115,79 +110,6 @@ async function main(): Promise<void> {
   }
 }
 
-/**
- * Build content string for memory extraction from an ExtractedSession.
- */
-function buildMemoryContent(session: ExtractedSession): string {
-  const parts: string[] = [];
-
-  if (session.userMessages.length > 0) {
-    parts.push('User messages:');
-    session.userMessages.forEach((msg, i) => {
-      parts.push(`${i + 1}. ${msg}`);
-    });
-  }
-
-  if (session.filesModified.length > 0) {
-    parts.push(`\nFiles modified: ${session.filesModified.join(', ')}`);
-  }
-
-  if (session.tasksCreated.length > 0) {
-    parts.push(`Tasks: ${session.tasksCreated.join(', ')}`);
-  }
-
-  if (session.branch) {
-    parts.push(`Branch: ${session.branch}`);
-  }
-
-  return parts.join('\n');
-}
-
-/**
- * Run memory extraction pipeline. Returns count of actions taken.
- * Fails gracefully — logs to stderr if Qdrant or LLM unavailable.
- */
-async function extractMemories(session: ExtractedSession): Promise<number> {
-  const content = buildMemoryContent(session);
-  if (!content.trim()) return 0;
-
-  try {
-    // Dynamic imports to avoid loading heavy deps on every hook invocation
-    const [
-      { loadConfig },
-      { createEmbedding },
-      { QdrantVectorDB },
-      { MemoryHistory },
-      { MemoryStore },
-      { getMemoryDbPath },
-    ] = await Promise.all([
-      import('../config.js'),
-      import('../embedding/factory.js'),
-      import('../vectordb/qdrant.js'),
-      import('../memory/history.js'),
-      import('../memory/store.js'),
-      import('../paths.js'),
-    ]);
-
-    const config = loadConfig();
-    const embedding = createEmbedding(config);
-    await embedding.initialize();
-    const vectordb = new QdrantVectorDB();
-    const history = new MemoryHistory(getMemoryDbPath());
-    const memoryStore = new MemoryStore(embedding, vectordb, history);
-
-    const actions = await memoryStore.addMemory(content, 'session-end-hook');
-    process.stderr.write(
-      `[eidetic] Memory extraction: ${actions.length} action(s) (${actions.map((a) => a.event).join(', ') || 'none'})\n`,
-    );
-    return actions.length;
-  } catch (err) {
-    process.stderr.write(
-      `[eidetic] Memory extraction failed (non-fatal): ${err instanceof Error ? err.message : String(err)}\n`,
-    );
-    return 0;
-  }
-}
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];

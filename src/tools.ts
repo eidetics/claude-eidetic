@@ -347,16 +347,16 @@ export class ToolHandlers {
   ): Promise<{ content: { type: string; text: string }[] }> {
     if (!this.memoryStore) return textResult('Error: Memory system not initialized.');
 
-    const content = args.content as string | undefined;
-    if (!content)
+    const facts = args.facts as Array<{ fact: string; category: string }> | undefined;
+    if (!facts || !Array.isArray(facts) || facts.length === 0)
       return textResult(
-        'Error: "content" is required. Provide text containing developer knowledge to extract.',
+        'Error: "facts" is required. Provide an array of pre-extracted facts with fact and category fields.',
       );
 
     const source = args.source as string | undefined;
 
     try {
-      const actions = await this.memoryStore.addMemory(content, source);
+      const actions = await this.memoryStore.addMemory(facts, source);
       return textResult(formatMemoryActions(actions));
     } catch (err) {
       const message = getErrorMessage(err);
