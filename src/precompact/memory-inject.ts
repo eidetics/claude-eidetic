@@ -25,12 +25,13 @@ async function main(): Promise<void> {
     const projectName = path.basename(projectPath);
 
     // Dynamic imports — avoid loading heavy deps if not needed
-    const [{ loadConfig }, { createEmbedding }, { MemoryHistory }, { MemoryStore }] = await Promise.all([
-      import('../config.js'),
-      import('../embedding/factory.js'),
-      import('../memory/history.js'),
-      import('../memory/store.js'),
-    ]);
+    const [{ loadConfig }, { createEmbedding }, { MemoryHistory }, { MemoryStore }] =
+      await Promise.all([
+        import('../config.js'),
+        import('../embedding/factory.js'),
+        import('../memory/history.js'),
+        import('../memory/store.js'),
+      ]);
 
     const config = loadConfig();
     const embedding = createEmbedding(config);
