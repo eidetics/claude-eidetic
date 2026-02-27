@@ -47,15 +47,20 @@ jobs:
       - name: Bump version
         run: npm version ${{ github.event.inputs.bump }} --no-git-tag-version
 
-      - name: Sync plugin.json version
+      - name: Sync plugin.json and marketplace.json versions
         run: |
           VERSION="$(node -p "require('./package.json').version")"
           PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          MARKETPLACE_JSON=".claude-plugin/marketplace.json"
           node -e "
           const fs = require('fs');
           const p = JSON.parse(fs.readFileSync('$PLUGIN_JSON', 'utf8'));
           p.version = '$VERSION';
           fs.writeFileSync('$PLUGIN_JSON', JSON.stringify(p, null, 2) + '\n');
+          const m = JSON.parse(fs.readFileSync('$MARKETPLACE_JSON', 'utf8'));
+          const plugin = m.plugins.find(p => p.name === 'claude-eidetic');
+          if (plugin) plugin.version = '$VERSION';
+          fs.writeFileSync('$MARKETPLACE_JSON', JSON.stringify(m, null, 2) + '\n');
           "
 
       - name: Build
@@ -71,8 +76,9 @@ jobs:
           VERSION="$(node -p "require('./package.json').version")"
           BRANCH="chore/release-v$VERSION"
           PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          MARKETPLACE_JSON=".claude-plugin/marketplace.json"
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json "$PLUGIN_JSON"
+          git add package.json package-lock.json "$PLUGIN_JSON" "$MARKETPLACE_JSON"
           git commit -m "chore(release): v$VERSION"
           git push origin "$BRANCH"
           gh pr create \
