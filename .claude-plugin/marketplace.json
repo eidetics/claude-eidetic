@@ -11,7 +11,7 @@
       "name": "claude-eidetic",
       "description": "Semantic code search MCP server with compact output, skills, and hooks",
       "source": "./plugin",
-      "version": "1.0.0",
+      "version": "0.1.5",
       "category": "development",
       "tags": ["code-search", "semantic-search", "mcp"]
     }
