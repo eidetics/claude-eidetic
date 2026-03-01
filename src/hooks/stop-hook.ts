@@ -34,12 +34,12 @@ async function readStdin(): Promise<string> {
 }
 
 function outputSuccess(): void {
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
+  process.stdout.write(JSON.stringify({}));
 }
 
 function outputError(message: string): void {
   process.stderr.write(`[eidetic:stop-hook] ${message}\n`);
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
+  process.stdout.write(JSON.stringify({}));
 }
 
 async function main(): Promise<void> {
