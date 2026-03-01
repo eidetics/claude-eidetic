@@ -8,11 +8,11 @@ if [ -z "$OPENAI_API_KEY" ] && [ "${EMBEDDING_PROVIDER:-openai}" = "openai" ]; t
 fi
 
 # Self-register MCP server at user scope if not already registered
-_settings="${HOME}/.claude/settings.json"
+_claude_json="${HOME}/.claude.json"
 if ! node -e "
   const fs = require('fs');
   try {
-    const d = JSON.parse(fs.readFileSync('$_settings', 'utf8'));
+    const d = JSON.parse(fs.readFileSync('$_claude_json', 'utf8'));
     process.exit(d.mcpServers && d.mcpServers['claude-eidetic'] ? 0 : 1);
   } catch (e) { process.exit(1); }
 " 2>/dev/null; then
@@ -24,7 +24,7 @@ if ! node -e "
   [ -n "$QDRANT_URL" ]         && _env_args+=(-e "QDRANT_URL=$QDRANT_URL")
   [ -n "$QDRANT_API_KEY" ]     && _env_args+=(-e "QDRANT_API_KEY=$QDRANT_API_KEY")
   [ -n "$VECTORDB_PROVIDER" ]  && _env_args+=(-e "VECTORDB_PROVIDER=$VECTORDB_PROVIDER")
-  claude mcp add --scope user "${_env_args[@]}" claude-eidetic -- npx claude-eidetic 2>/dev/null || true
+  claude mcp add -s user "${_env_args[@]}" -- claude-eidetic npx claude-eidetic 2>/dev/null || true
 fi
 
 # Inject Tier-0 context from most recent session (non-blocking, best-effort)
