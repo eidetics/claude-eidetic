@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { registerProject, resolveProject, listProjects } from '../registry.js';
+import { registerProject, resolveProject, listProjects, findProjectByPath } from '../registry.js';
 
 let tmpDir: string;
 
@@ -43,5 +43,35 @@ describe('registry', () => {
     const projects = listProjects();
     expect(projects['project-one']).toBe('/a/project-one');
     expect(projects['project-two']).toBe('/b/project-two');
+  });
+
+  describe('findProjectByPath', () => {
+    it('returns exact match', () => {
+      registerProject('/home/user/my-project');
+      expect(findProjectByPath('/home/user/my-project')).toBe('/home/user/my-project');
+    });
+
+    it('returns match for subdirectory', () => {
+      registerProject('/home/user/my-project');
+      expect(findProjectByPath('/home/user/my-project/src/lib')).toBe('/home/user/my-project');
+    });
+
+    it('returns undefined for unrelated path', () => {
+      registerProject('/home/user/my-project');
+      expect(findProjectByPath('/home/user/other')).toBeUndefined();
+    });
+
+    it('picks the longest (most specific) match', () => {
+      registerProject('/home/user/workspace');
+      registerProject('/home/user/workspace/nested');
+      expect(findProjectByPath('/home/user/workspace/nested/src')).toBe(
+        '/home/user/workspace/nested',
+      );
+    });
+
+    it('is case-insensitive and normalizes backslashes', () => {
+      registerProject('/home/user/MyProject');
+      expect(findProjectByPath('\\home\\user\\MyProject\\src')).toBe('/home/user/MyProject');
+    });
   });
 });

@@ -36,3 +36,16 @@ export function resolveProject(project: string): string | undefined {
 export function listProjects(): Registry {
   return readRegistry();
 }
+
+export function findProjectByPath(dir: string): string | undefined {
+  const registry = readRegistry();
+  const normalized = dir.replace(/\\/g, '/').toLowerCase();
+  let best: string | undefined;
+  for (const projPath of Object.values(registry)) {
+    const normProj = projPath.replace(/\\/g, '/').toLowerCase();
+    if (normalized === normProj || normalized.startsWith(normProj + '/')) {
+      if (!best || projPath.length > best.length) best = projPath;
+    }
+  }
+  return best;
+}
