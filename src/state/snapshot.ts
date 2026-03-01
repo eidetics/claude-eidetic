@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getSnapshotDir } from '../paths.js';
+import { getSnapshotDir, pathToCollectionName } from '../paths.js';
 import type { VectorDB } from '../vectordb/types.js';
 
 export type CodebaseStatus = 'idle' | 'indexing' | 'indexed' | 'error';
@@ -68,6 +68,27 @@ export class StateManager {
 
   remove(normalizedPath: string): void {
     this.states.delete(normalizedPath);
+  }
+
+  async hydrate(registry: Record<string, string>, vectordb: VectorDB): Promise<number> {
+    let count = 0;
+    for (const [, projectPath] of Object.entries(registry)) {
+      try {
+        const collectionName = pathToCollectionName(projectPath);
+        const exists = await vectordb.hasCollection(collectionName);
+        if (exists && !this.states.has(projectPath)) {
+          this.states.set(projectPath, {
+            path: projectPath,
+            collectionName,
+            status: 'indexed',
+          });
+          count++;
+        }
+      } catch (err) {
+        console.warn(`Hydration failed for ${projectPath}:`, err);
+      }
+    }
+    return count;
   }
 }
 
