@@ -8,11 +8,11 @@ if [ -z "$OPENAI_API_KEY" ] && [ "${EMBEDDING_PROVIDER:-openai}" = "openai" ]; t
 fi
 
 # Self-register MCP server at user scope if not already registered
-_claude_json="${HOME}/.claude.json"
 if ! node -e "
-  const fs = require('fs');
+  const fs = require('fs'), path = require('path'), os = require('os');
   try {
-    const d = JSON.parse(fs.readFileSync('$_claude_json', 'utf8'));
+    const p = path.join(os.homedir(), '.claude.json');
+    const d = JSON.parse(fs.readFileSync(p, 'utf8'));
     process.exit(d.mcpServers && d.mcpServers['claude-eidetic'] ? 0 : 1);
   } catch (e) { process.exit(1); }
 " 2>/dev/null; then
