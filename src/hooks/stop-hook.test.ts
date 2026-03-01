@@ -83,11 +83,9 @@ function createShadowIndex(
   fs.writeFileSync(path.join(shadowDir, 'base_commit'), baseCommit, 'utf-8');
 
   const shadowIndex = path.join(shadowDir, 'index');
-  execFileSync(
-    'git',
-    ['-C', repoDir, 'read-tree', `--index-output=${shadowIndex}`, 'HEAD'],
-    { encoding: 'utf-8' },
-  );
+  execFileSync('git', ['-C', repoDir, 'read-tree', `--index-output=${shadowIndex}`, 'HEAD'], {
+    encoding: 'utf-8',
+  });
 
   if (extraFiles) {
     for (const [relPath, content] of Object.entries(extraFiles)) {
