@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { StateManager } from '../snapshot.js';
+import { pathToCollectionName } from '../../paths.js';
+import type { VectorDB } from '../../vectordb/types.js';
 
 describe('StateManager', () => {
   it('returns undefined for unknown path', () => {
@@ -62,5 +64,57 @@ describe('StateManager', () => {
     const states = sm.getAllStates();
     expect(states).toHaveLength(2);
     expect(states.map((s) => s.path).sort()).toEqual(['/a', '/b']);
+  });
+
+  describe('hydrate', () => {
+    function mockVectorDB(existingCollections: Set<string>): VectorDB {
+      return {
+        hasCollection: vi.fn(async (name: string) => existingCollections.has(name)),
+      } as unknown as VectorDB;
+    }
+
+    it('hydrates entries whose collections exist in vectordb', async () => {
+      const sm = new StateManager();
+      const pathA = '/tmp/project-a';
+      const pathB = '/tmp/project-b';
+      const collA = pathToCollectionName(pathA);
+      const vdb = mockVectorDB(new Set([collA]));
+      const registry = { 'project-a': pathA, 'project-b': pathB };
+      const count = await sm.hydrate(registry, vdb);
+      expect(count).toBe(1);
+      const state = sm.getState(pathA);
+      expect(state).toBeDefined();
+      expect(state!.status).toBe('indexed');
+      expect(state!.totalFiles).toBeUndefined();
+      expect(sm.getState(pathB)).toBeUndefined();
+    });
+
+    it('does not overwrite existing in-memory state', async () => {
+      const sm = new StateManager();
+      sm.setIndexing('/existing', 'eidetic__existing');
+      const vdb = mockVectorDB(new Set(['eidetic__existing']));
+      const count = await sm.hydrate({ proj: '/existing' }, vdb);
+      expect(count).toBe(0);
+      expect(sm.getState('/existing')!.status).toBe('indexing');
+    });
+
+    it('continues when individual entries fail', async () => {
+      const sm = new StateManager();
+      const vdb = {
+        hasCollection: vi
+          .fn()
+          .mockRejectedValueOnce(new Error('network'))
+          .mockResolvedValueOnce(true),
+      } as unknown as VectorDB;
+      const registry = { bad: '/bad', good: '/good' };
+      const count = await sm.hydrate(registry, vdb);
+      expect(count).toBe(1);
+    });
+
+    it('returns 0 for empty registry', async () => {
+      const sm = new StateManager();
+      const vdb = mockVectorDB(new Set());
+      expect(await sm.hydrate({}, vdb)).toBe(0);
+    });
   });
 });

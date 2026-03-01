@@ -18,6 +18,7 @@ import { createEmbedding } from './embedding/factory.js';
 import { QdrantVectorDB } from './vectordb/qdrant.js';
 import { bootstrapQdrant } from './infra/qdrant-bootstrap.js';
 import { StateManager, cleanupOrphanedSnapshots } from './state/snapshot.js';
+import { listProjects } from './state/registry.js';
 import { ToolHandlers, handleReadFile } from './tools.js';
 import { TOOL_DEFINITIONS } from './tool-schemas.js';
 import { getSetupErrorMessage } from './setup-message.js';
@@ -99,6 +100,10 @@ async function main() {
     }
 
     const state = new StateManager();
+    const hydrated = await state.hydrate(listProjects(), vectordb);
+    if (hydrated > 0) {
+      console.log(`Hydrated ${hydrated} project(s) from registry.`);
+    }
     handlers = new ToolHandlers(embedding, vectordb, state);
 
     // Initialize memory subsystem
