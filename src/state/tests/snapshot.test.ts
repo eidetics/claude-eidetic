@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { StateManager } from '../snapshot.js';
+import { pathToCollectionName } from '../../paths.js';
 import type { VectorDB } from '../../vectordb/types.js';
 
 describe('StateManager', () => {
@@ -74,18 +75,18 @@ describe('StateManager', () => {
 
     it('hydrates entries whose collections exist in vectordb', async () => {
       const sm = new StateManager();
-      const vdb = mockVectorDB(new Set(['eidetic_e_workspace_project_a']));
-      const registry = {
-        'project-a': 'E:/workspace/project-a',
-        'project-b': 'E:/workspace/project-b',
-      };
+      const pathA = '/tmp/project-a';
+      const pathB = '/tmp/project-b';
+      const collA = pathToCollectionName(pathA);
+      const vdb = mockVectorDB(new Set([collA]));
+      const registry = { 'project-a': pathA, 'project-b': pathB };
       const count = await sm.hydrate(registry, vdb);
       expect(count).toBe(1);
-      const state = sm.getState('E:/workspace/project-a');
+      const state = sm.getState(pathA);
       expect(state).toBeDefined();
       expect(state!.status).toBe('indexed');
       expect(state!.totalFiles).toBeUndefined();
-      expect(sm.getState('E:/workspace/project-b')).toBeUndefined();
+      expect(sm.getState(pathB)).toBeUndefined();
     });
 
     it('does not overwrite existing in-memory state', async () => {
