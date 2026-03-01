@@ -92,10 +92,18 @@ function createShadowIndex(
       const fullPath = path.join(repoDir, relPath);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, content, 'utf-8');
-      execFileSync('git', ['-C', repoDir, 'add', relPath], {
-        env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
+      // Hash the object and update the shadow index directly (avoids GIT_INDEX_FILE + git add quirks)
+      const blobSha = execFileSync('git', ['-C', repoDir, 'hash-object', '-w', fullPath], {
         encoding: 'utf-8',
-      });
+      }).trim();
+      execFileSync(
+        'git',
+        ['-C', repoDir, 'update-index', '--add', '--cacheinfo', `100644,${blobSha},${relPath}`],
+        {
+          env: { ...process.env, GIT_INDEX_FILE: shadowIndex },
+          encoding: 'utf-8',
+        },
+      );
     }
   }
 }
