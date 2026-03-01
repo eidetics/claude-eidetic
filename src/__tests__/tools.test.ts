@@ -10,6 +10,7 @@ vi.mock('../state/registry.js', () => ({
   registerProject: vi.fn(),
   resolveProject: vi.fn(() => undefined),
   listProjects: vi.fn(() => ({})),
+  findProjectByPath: vi.fn(() => undefined),
 }));
 
 // Mock indexer to avoid complex filesystem operations

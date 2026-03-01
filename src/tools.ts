@@ -10,7 +10,12 @@ import { indexDocument } from './core/doc-indexer.js';
 import { searchDocuments } from './core/doc-searcher.js';
 import { generateRepoMap, listSymbolsTable, VectorDBSymbolSource } from './core/repo-map.js';
 import { StateManager } from './state/snapshot.js';
-import { registerProject, resolveProject, listProjects } from './state/registry.js';
+import {
+  registerProject,
+  resolveProject,
+  listProjects,
+  findProjectByPath,
+} from './state/registry.js';
 import type { Embedding } from './embedding/types.js';
 import type { VectorDB } from './vectordb/types.js';
 import {
@@ -39,7 +44,8 @@ function resolvePath(args: Record<string, unknown>): string | undefined {
   const projectArg = args.project as string | undefined;
   if (projectArg) return resolveProject(projectArg);
 
-  return undefined;
+  // Fallback: match cwd against registered projects
+  return findProjectByPath(process.cwd());
 }
 
 function noPathError(): { content: { type: string; text: string }[] } {
