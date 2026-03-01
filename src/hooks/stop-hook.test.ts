@@ -5,7 +5,18 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { createTempCodebase, cleanupTempDir } from '../__tests__/fixtures.js';
 
-const HOOK_PATH = path.resolve('dist/hooks/stop-hook.js');
+const HOOK_PATH = path.resolve('src/hooks/stop-hook.ts');
+
+// Resolve tsx binary cross-platform
+function findTsx(): string {
+  try {
+    // tsx package exports its bin path
+    const tsxPkg = path.dirname(require.resolve('tsx/package.json'));
+    return path.join(tsxPkg, 'dist', 'cli.mjs');
+  } catch {
+    return 'tsx'; // fallback to PATH
+  }
+}
 
 interface HookResult {
   stdout: string;
@@ -14,12 +25,12 @@ interface HookResult {
 }
 
 /**
- * Spawns dist/hooks/stop-hook.js, writes payload to stdin,
- * collects stdout + stderr, and returns { stdout, stderr, exitCode }.
+ * Spawns the stop-hook via tsx (runs .ts source directly),
+ * writes payload to stdin, collects stdout + stderr, and returns result.
  */
 async function invokeStopHook(payload: unknown, cwdOverride?: string): Promise<HookResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [HOOK_PATH], {
+    const child = spawn(process.execPath, [findTsx(), HOOK_PATH], {
       cwd: cwdOverride ?? process.cwd(),
       stdio: ['pipe', 'pipe', 'pipe'],
       env: process.env,
