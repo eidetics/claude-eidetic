@@ -116,6 +116,13 @@ Single ESM package. MCP server over stdio that indexes codebases into a vector D
 
 - **Feature work always starts in a new git worktree.** Use the `superpowers:using-git-worktrees` skill before beginning any feature implementation.
 
+## Pre-commit Checks
+
+Before every git commit, run prettier on all staged `.ts` files:
+```bash
+npm run format          # prettier --write src/**/*.ts
+```
+
 ## Conventions
 
 - **ESM only.** All imports use `.js` extensions.
