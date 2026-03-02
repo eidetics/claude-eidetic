@@ -61,4 +61,7 @@ export interface VectorDB {
     payload: Record<string, unknown>,
   ): Promise<void>;
   listSymbols(name: string): Promise<SymbolEntry[]>;
+  scrollAll(
+    name: string,
+  ): Promise<{ id: string | number; vector: number[]; payload: Record<string, unknown> }[]>;
 }

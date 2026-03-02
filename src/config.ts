@@ -26,6 +26,12 @@ const configSchema = z
       (val) => (typeof val === 'string' ? JSON.parse(val) : val),
       z.array(z.string()).default([]),
     ),
+    raptorEnabled: z.preprocess(
+      (val) => (val === 'false' ? false : val === 'true' ? true : val),
+      z.boolean().default(true),
+    ),
+    raptorTimeoutMs: z.coerce.number().int().min(1000).default(60000),
+    raptorLlmModel: z.string().default('gpt-4o-mini'),
   })
   .transform((cfg) => ({
     ...cfg,
@@ -56,6 +62,9 @@ export function loadConfig(): Config {
     eideticDataDir: process.env.EIDETIC_DATA_DIR,
     customExtensions: process.env.CUSTOM_EXTENSIONS,
     customIgnorePatterns: process.env.CUSTOM_IGNORE_PATTERNS,
+    raptorEnabled: process.env.RAPTOR_ENABLED,
+    raptorTimeoutMs: process.env.RAPTOR_TIMEOUT_MS,
+    raptorLlmModel: process.env.RAPTOR_LLM_MODEL,
   };
 
   const result = configSchema.safeParse(raw);

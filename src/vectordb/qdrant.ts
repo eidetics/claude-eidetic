@@ -252,6 +252,43 @@ export class QdrantVectorDB implements VectorDB {
       throw new VectorDBError(`Failed to list symbols from "${name}"`, err);
     }
   }
+
+  async scrollAll(
+    name: string,
+  ): Promise<{ id: string | number; vector: number[]; payload: Record<string, unknown> }[]> {
+    try {
+      const results: { id: string | number; vector: number[]; payload: Record<string, unknown> }[] =
+        [];
+      let offset: string | number | undefined = undefined;
+      const pageSize = 1000;
+
+      while (true) {
+        const response = await this.client.scroll(name, {
+          limit: pageSize,
+          with_payload: true,
+          with_vector: true,
+          ...(offset !== undefined ? { offset } : {}),
+        });
+
+        for (const point of response.points) {
+          const vectors = point.vector as Record<string, number[]> | number[] | undefined;
+          const vector = Array.isArray(vectors) ? vectors : (vectors?.dense ?? []);
+          results.push({
+            id: point.id,
+            vector,
+            payload: (point.payload as Record<string, unknown>) ?? {},
+          });
+        }
+
+        if (response.next_page_offset == null || response.points.length < pageSize) break;
+        offset = response.next_page_offset as string | number;
+      }
+
+      return results;
+    } catch (err) {
+      throw new VectorDBError(`Failed to scroll all points from "${name}"`, err);
+    }
+  }
 }
 
 interface RankedPoint {

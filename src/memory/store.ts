@@ -10,6 +10,7 @@ import {
   applyKindWeighting,
   applyRecencyDecay,
 } from './query-classifier.js';
+import { globalConceptsCollectionName } from '../paths.js';
 
 const SEARCH_CANDIDATES = 5;
 const ACCESS_BUMP_COUNT = 5;
@@ -91,6 +92,10 @@ export class MemoryStore {
 
     if (collections.length === 0) return [];
 
+    // Also search global concepts for broader context
+    const conceptsCol = globalConceptsCollectionName();
+    const searchConcepts = await this.vectordb.hasCollection(conceptsCol);
+
     // Search all relevant collections in parallel
     const allResults = await Promise.all(
       collections.map(async (col) => {
@@ -108,6 +113,18 @@ export class MemoryStore {
         return items;
       }),
     );
+
+    // Search global concepts with reduced weight
+    if (searchConcepts) {
+      const conceptResults = await this.vectordb.search(conceptsCol, searchOpts);
+      for (const r of conceptResults) {
+        const id = r.relativePath;
+        const point = await this.vectordb.getById(conceptsCol, id);
+        if (!point) continue;
+        const item = payloadToMemoryItem(id, point.payload);
+        allResults.push([{ item, score: r.score * 0.8 }]);
+      }
+    }
 
     // Flatten and apply kind weighting + recency decay
     const scored = allResults.flat().map(({ item, score }) => {

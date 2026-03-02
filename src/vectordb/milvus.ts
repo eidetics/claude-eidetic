@@ -443,6 +443,31 @@ export class MilvusVectorDB implements VectorDB {
     }
   }
 
+  async scrollAll(
+    name: string,
+  ): Promise<{ id: string | number; vector: number[]; payload: Record<string, unknown> }[]> {
+    await this.ready();
+    await this.ensureLoaded(name);
+
+    try {
+      const result = await this.client.query({
+        collection_name: name,
+        filter: '',
+        output_fields: ['*'],
+        limit: 16384,
+      });
+
+      const rows: any[] = result.data ?? [];
+      return rows.map((r: any) => ({
+        id: String(r.id ?? ''),
+        vector: r.vector ?? [],
+        payload: r as Record<string, unknown>,
+      }));
+    } catch (err) {
+      throw new VectorDBError(`Failed to scroll all points from Milvus "${name}"`, err);
+    }
+  }
+
   private async ensureLoaded(name: string): Promise<void> {
     try {
       const result = await this.client.getLoadState({ collection_name: name });

@@ -153,6 +153,27 @@ export class MockVectorDB implements VectorDB {
       }));
   }
 
+  async scrollAll(
+    name: string,
+  ): Promise<{ id: string | number; vector: number[]; payload: Record<string, unknown> }[]> {
+    this.calls.push({ method: 'scrollAll', args: [name] });
+    const col = this.collections.get(name);
+    if (!col) return [];
+    return col.documents.map((doc) => ({
+      id: doc.id,
+      vector: doc.vector,
+      payload: {
+        content: doc.content,
+        relativePath: doc.relativePath,
+        startLine: doc.startLine,
+        endLine: doc.endLine,
+        fileExtension: doc.fileExtension,
+        language: doc.language,
+        ...(doc as unknown as Record<string, unknown>),
+      },
+    }));
+  }
+
   /** Reset all state for test isolation */
   reset(): void {
     this.collections.clear();
