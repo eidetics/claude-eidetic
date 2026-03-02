@@ -62,6 +62,8 @@ Single ESM package. MCP server over stdio that indexes codebases into a vector D
 
 **Memory system:** Per-project Qdrant collections (`eidetic_<project>_memory`). Memories classified by `kind`: fact, decision, convention, constraint, intent. Search uses query-classified weighting profiles (feasibility/rationale/procedural). Supersession chains track memory evolution. See [docs/architecture/memory-system.md](docs/architecture/memory-system.md).
 
+**Knowledge layer:** After indexing, RAPTOR clusters code chunks (K-means), LLM-summarizes each cluster, stores in `eidetic_<project>_knowledge`. Summaries replicate to `eidetic_global_concepts` for cross-project search. `search_memory` includes global concepts at 0.8x weight. `UserPromptSubmit` hook injects relevant concepts into prompts. Cache in `~/.eidetic/raptor.db`. See [docs/architecture/knowledge-layer.md](docs/architecture/knowledge-layer.md).
+
 **Config:** `config.ts` — Zod-validated, entirely env-var driven. `loadConfig()` reads `process.env`, caches result. No config files parsed at runtime (except `messages.yaml` for user-facing setup text).
 
 ## Workflow

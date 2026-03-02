@@ -37,13 +37,14 @@ Each memory has a `kind` field: `fact`, `decision`, `convention`, `constraint`, 
 
 1. Embed query text
 2. Classify query → profile (feasibility / rationale / procedural)
-3. Search project + global collections in parallel
-4. Filter out superseded entries (`superseded_by IS NOT NULL`)
-5. Apply kind-weighted scoring based on profile
-6. Apply recency decay based on `valid_at` and kind-specific decay rates
-7. Project boost (1.5x for project-matching memories)
-8. Sort by final score, return top N
-9. Bump `access_count` for top 5 results (fire-and-forget)
+3. Search project + global memory collections in parallel
+4. Search `eidetic_global_concepts` (knowledge layer, 0.8x weight) — see [knowledge-layer.md](knowledge-layer.md)
+5. Filter out superseded entries (`superseded_by IS NOT NULL`)
+6. Apply kind-weighted scoring based on profile
+7. Apply recency decay based on `valid_at` and kind-specific decay rates
+8. Project boost (1.5x for project-matching memories)
+9. Sort by final score, return top N
+10. Bump `access_count` for top 5 results (fire-and-forget)
 
 ## Query Classification
 
