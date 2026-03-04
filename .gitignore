@@ -11,5 +11,4 @@ backup/
 .worktrees/
 .trunk/
 CLAUDE.md
-.mcp.json git add .gitignore .gitattributes
-.mcp.json git add .gitignore .gitattributes
+.mcp.json
