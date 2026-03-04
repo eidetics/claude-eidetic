@@ -104,6 +104,11 @@ export class MemoryBuffer {
     return stale;
   }
 
+  /** Run a raw SQL statement with params. Exposed for testing. */
+  rawRun(sql: string, ...params: unknown[]): void {
+    this.db.prepare(sql).run(...params);
+  }
+
   close(): void {
     this.db.close();
   }
