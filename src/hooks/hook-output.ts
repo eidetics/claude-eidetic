@@ -11,7 +11,8 @@
  *   PreToolUse  → permissionDecision, permissionDecisionReason, updatedInput
  *   UserPromptSubmit → additionalContext (required)
  *   PostToolUse → additionalContext (optional)
- *   SessionStart / PreCompact / SessionEnd / Stop → no hookSpecificOutput defined
+ *   SessionStart → additionalContext (optional)
+ *   PreCompact / SessionEnd / Stop → no hookSpecificOutput defined
  */
 
 // ── Base fields shared by all hook events ─────────────────────────────
@@ -50,7 +51,14 @@ export interface PostToolUseOutput extends HookOutputBase {
   };
 }
 
-/** SessionStart, PreCompact, SessionEnd, Stop — no hookSpecificOutput defined. */
+export interface SessionStartOutput extends HookOutputBase {
+  hookSpecificOutput?: {
+    hookEventName: 'SessionStart';
+    additionalContext?: string;
+  };
+}
+
+/** PreCompact, SessionEnd, Stop — no hookSpecificOutput defined. */
 export type SimpleHookOutput = HookOutputBase;
 
 // ── Union of all valid outputs ────────────────────────────────────────
@@ -59,6 +67,7 @@ export type HookOutput =
   | PreToolUseOutput
   | UserPromptSubmitOutput
   | PostToolUseOutput
+  | SessionStartOutput
   | SimpleHookOutput;
 
 // ── Helper to write output to stdout ──────────────────────────────────
