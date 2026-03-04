@@ -11,14 +11,14 @@ interface AdjacencyEntry {
 
 export class MemoryGraph {
   private db: Database.Database;
-  private nodes: Map<string, GraphNode> = new Map();
+  private nodes = new Map<string, GraphNode>();
   /** Forward adjacency: nodeId → list of connected node IDs + edge IDs */
-  private adjacency: Map<string, AdjacencyEntry[]> = new Map();
+  private adjacency = new Map<string, AdjacencyEntry[]>();
   /** Reverse adjacency: targetId → list of source node IDs + edge IDs */
-  private reverseAdj: Map<string, AdjacencyEntry[]> = new Map();
-  private edges: Map<string, GraphEdge> = new Map();
+  private reverseAdj = new Map<string, AdjacencyEntry[]>();
+  private edges = new Map<string, GraphEdge>();
   /** Dedup key → nodeId for fast lookup: "name|type|project" */
-  private nodeIndex: Map<string, string> = new Map();
+  private nodeIndex = new Map<string, string>();
 
   constructor(dbPath: string) {
     mkdirSync(dirname(dbPath), { recursive: true });
@@ -76,7 +76,7 @@ export class MemoryGraph {
     return undefined;
   }
 
-  getNeighbors(nodeId: string, depth: number = 1): GraphNode[] {
+  getNeighbors(nodeId: string, depth = 1): GraphNode[] {
     if (!this.nodes.has(nodeId)) return [];
 
     const visited = new Set<string>([nodeId]);
@@ -132,8 +132,12 @@ export class MemoryGraph {
       }
     }
 
-    const nodes = [...nodeIds].map((id) => this.nodes.get(id)!).filter(Boolean);
-    const edges = [...edgeSet].map((id) => this.edges.get(id)!).filter(Boolean);
+    const nodes = [...nodeIds]
+      .map((id) => this.nodes.get(id))
+      .filter((n): n is GraphNode => n !== undefined);
+    const edges = [...edgeSet]
+      .map((id) => this.edges.get(id))
+      .filter((e): e is GraphEdge => e !== undefined);
 
     return { nodes, edges };
   }
@@ -221,7 +225,7 @@ export class MemoryGraph {
   }
 
   private loadFromDb(): void {
-    const nodeRows = this.db.prepare('SELECT * FROM graph_nodes').all() as Array<{
+    const nodeRows = this.db.prepare('SELECT * FROM graph_nodes').all() as {
       id: string;
       name: string;
       type: string;
@@ -229,7 +233,7 @@ export class MemoryGraph {
       metadata: string | null;
       created_at: string;
       updated_at: string;
-    }>;
+    }[];
 
     for (const row of nodeRows) {
       const node: GraphNode = {
@@ -242,10 +246,10 @@ export class MemoryGraph {
         updated_at: row.updated_at,
       };
       this.nodes.set(node.id, node);
-      this.nodeIndex.set(this.dedupKey(node.name, node.type as NodeType, node.project), node.id);
+      this.nodeIndex.set(this.dedupKey(node.name, node.type, node.project), node.id);
     }
 
-    const edgeRows = this.db.prepare('SELECT * FROM graph_edges').all() as Array<{
+    const edgeRows = this.db.prepare('SELECT * FROM graph_edges').all() as {
       id: string;
       source_id: string;
       target_id: string;
@@ -253,7 +257,7 @@ export class MemoryGraph {
       project: string;
       metadata: string | null;
       created_at: string;
-    }>;
+    }[];
 
     for (const row of edgeRows) {
       const edge: GraphEdge = {
@@ -278,8 +282,8 @@ export class MemoryGraph {
     const key = this.dedupKey(name, type, project);
     const existingId = this.nodeIndex.get(key);
     if (existingId) {
-      const existing = this.nodes.get(existingId)!;
-      existing.updated_at = now;
+      const existing = this.nodes.get(existingId);
+      if (existing) existing.updated_at = now;
       return existingId;
     }
 
@@ -308,7 +312,7 @@ export class MemoryGraph {
     for (const entry of this.adjacency.get(sourceId) ?? []) {
       if (entry.targetId === targetId) {
         const existingEdge = this.edges.get(entry.edgeId);
-        if (existingEdge && existingEdge.relationship === relationship) {
+        if (existingEdge?.relationship === relationship) {
           return; // Edge already exists
         }
       }
@@ -328,10 +332,12 @@ export class MemoryGraph {
   }
 
   private addToAdjacency(sourceId: string, targetId: string, edgeId: string): void {
-    if (!this.adjacency.has(sourceId)) this.adjacency.set(sourceId, []);
-    this.adjacency.get(sourceId)!.push({ targetId, edgeId });
+    const fwd = this.adjacency.get(sourceId) ?? [];
+    fwd.push({ targetId, edgeId });
+    this.adjacency.set(sourceId, fwd);
 
-    if (!this.reverseAdj.has(targetId)) this.reverseAdj.set(targetId, []);
-    this.reverseAdj.get(targetId)!.push({ targetId: sourceId, edgeId });
+    const rev = this.reverseAdj.get(targetId) ?? [];
+    rev.push({ targetId: sourceId, edgeId });
+    this.reverseAdj.set(targetId, rev);
   }
 }

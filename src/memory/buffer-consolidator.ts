@@ -11,7 +11,6 @@ import type {
   GraphTriple,
   NodeType,
   RelationType,
-  MemoryKind,
 } from './types.js';
 
 const VALID_KINDS = new Set<string>(['fact', 'decision', 'convention', 'constraint', 'intent']);

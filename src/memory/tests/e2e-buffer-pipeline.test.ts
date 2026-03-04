@@ -176,7 +176,7 @@ describe('Buffer Pipeline E2E', () => {
     buffer.add('old-session', 'old fact', 'post-tool-extract', 'Bash', 'proj');
 
     // Backdate to 7 hours ago
-    buffer['db']
+    buffer.db
       .prepare('UPDATE memory_buffer SET captured_at = ?')
       .run(new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString());
 

@@ -514,8 +514,9 @@ export class ToolHandlers {
     // Group by type
     const byType = new Map<string, string[]>();
     for (const node of nodes) {
-      if (!byType.has(node.type)) byType.set(node.type, []);
-      byType.get(node.type)!.push(node.name);
+      const list = byType.get(node.type) ?? [];
+      list.push(node.name);
+      byType.set(node.type, list);
     }
 
     for (const [type, names] of byType) {

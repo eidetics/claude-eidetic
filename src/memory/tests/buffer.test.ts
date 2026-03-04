@@ -112,7 +112,7 @@ describe('MemoryBuffer', () => {
       // Manually insert a stale lock
       buffer.markConsolidating('sess-1');
       // Override the timestamp to 6 minutes ago
-      buffer['db']
+      buffer.db
         .prepare(`UPDATE buffer_sessions SET consolidating_since = ? WHERE session_id = ?`)
         .run(new Date(Date.now() - 6 * 60 * 1000).toISOString(), 'sess-1');
       expect(buffer.isConsolidating('sess-1')).toBe(false);
@@ -129,7 +129,7 @@ describe('MemoryBuffer', () => {
     it('removes items older than the given max age', () => {
       buffer.add('sess-1', 'old fact', 'post-tool-extract', 'Bash', 'proj');
       // Backdate the item to 7 hours ago
-      buffer['db']
+      buffer.db
         .prepare(`UPDATE memory_buffer SET captured_at = ?`)
         .run(new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString());
       const stale = buffer.clearStaleItems(6 * 60 * 60 * 1000); // 6 hours
