@@ -121,9 +121,7 @@ describe('OpenAIEmbedding — retry logic', () => {
     const serverErr = Object.assign(new Error('Internal Server Error'), { status: 500 });
     const vec = [1, 2, 3, 4];
 
-    mockCreate
-      .mockRejectedValueOnce(serverErr)
-      .mockResolvedValueOnce(fakeEmbeddingResponse([vec]));
+    mockCreate.mockRejectedValueOnce(serverErr).mockResolvedValueOnce(fakeEmbeddingResponse([vec]));
 
     const promise = emb.embedBatch(['hello']);
     await vi.advanceTimersByTimeAsync(1100);
