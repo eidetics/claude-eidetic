@@ -36,12 +36,18 @@ async function readStdin(): Promise<string> {
 }
 
 function outputSuccess(): void {
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
+  const output: import('./hook-output.js').PostToolUseOutput = {
+    hookSpecificOutput: { hookEventName: 'PostToolUse' },
+  };
+  process.stdout.write(JSON.stringify(output));
 }
 
 function outputError(message: string): void {
   process.stderr.write(`[eidetic:post-tool-use] ${message}\n`);
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
+  const output: import('./hook-output.js').PostToolUseOutput = {
+    hookSpecificOutput: { hookEventName: 'PostToolUse' },
+  };
+  process.stdout.write(JSON.stringify(output));
 }
 
 async function main(): Promise<void> {

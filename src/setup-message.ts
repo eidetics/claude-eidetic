@@ -62,5 +62,8 @@ export function getSetupErrorMessage(errorDetail: string, context?: SetupContext
 if (process.argv[1] === __filename) {
   const context = (process.argv[2] as SetupContext | undefined) ?? 'missing';
   const detail = process.argv[3] ?? 'OPENAI_API_KEY is not set.';
-  console.log(JSON.stringify({ additionalContext: getSetupErrorMessage(detail, context) }));
+  const output: import('./hooks/hook-output.js').SimpleHookOutput = {
+    systemMessage: getSetupErrorMessage(detail, context),
+  };
+  console.log(JSON.stringify(output));
 }

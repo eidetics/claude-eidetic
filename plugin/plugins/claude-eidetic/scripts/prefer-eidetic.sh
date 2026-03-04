@@ -24,7 +24,7 @@ if [ "$TOOL_NAME" = "Read" ]; then
         "hookSpecificOutput": {
           "hookEventName": "PreToolUse",
           "permissionDecision": "deny",
-          "additionalContext": "BLOCKED: Use read_file MCP tool instead of Read for text files. read_file returns raw content without line-number overhead (~15-20% fewer tokens for code). Example: read_file(path=\"...\"). Add lineNumbers=true only when you need line refs for editing."
+          "permissionDecisionReason": "BLOCKED: Use read_file MCP tool instead of Read for text files. read_file returns raw content without line-number overhead (~15-20% fewer tokens for code). Example: read_file(path=\"...\"). Add lineNumbers=true only when you need line refs for editing."
         }
       }'
       ;;

@@ -34,12 +34,14 @@ async function readStdin(): Promise<string> {
 }
 
 function outputSuccess(): void {
-  process.stdout.write(JSON.stringify({}));
+  const output: import('./hook-output.js').SimpleHookOutput = {};
+  process.stdout.write(JSON.stringify(output));
 }
 
 function outputError(message: string): void {
   process.stderr.write(`[eidetic:stop-hook] ${message}\n`);
-  process.stdout.write(JSON.stringify({}));
+  const output: import('./hook-output.js').SimpleHookOutput = {};
+  process.stdout.write(JSON.stringify(output));
 }
 
 async function main(): Promise<void> {

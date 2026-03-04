@@ -252,7 +252,10 @@ function spawnBufferRunner(sessionId: string, project: string): void {
 }
 
 function writeOutput(): void {
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }) + '\n');
+  const output: import('./hook-output.js').PostToolUseOutput = {
+    hookSpecificOutput: { hookEventName: 'PostToolUse' },
+  };
+  process.stdout.write(JSON.stringify(output));
 }
 
 void main();

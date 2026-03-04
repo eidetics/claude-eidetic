@@ -206,15 +206,16 @@ async function readStdin(): Promise<string> {
 }
 
 function outputSuccess(result: Record<string, unknown>): void {
-  const output = {
-    hookSpecificOutput: { success: true, ...result },
-  };
+  // SessionEnd/PreCompact have no hookSpecificOutput schema — log details to stderr only
+  process.stderr.write(`[eidetic] ${JSON.stringify(result)}\n`);
+  const output: import('../hooks/hook-output.js').SimpleHookOutput = {};
   process.stdout.write(JSON.stringify(output));
 }
 
 function outputError(message: string): void {
-  process.stderr.write(JSON.stringify({ error: message }) + '\n');
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: {} }));
+  process.stderr.write(`[eidetic] Error: ${message}\n`);
+  const output: import('../hooks/hook-output.js').SimpleHookOutput = {};
+  process.stdout.write(JSON.stringify(output));
 }
 
 void main();
