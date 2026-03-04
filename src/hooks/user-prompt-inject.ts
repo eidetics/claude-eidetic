@@ -7,10 +7,15 @@
  */
 
 import { execSync } from 'node:child_process';
+import type { UserPromptSubmitOutput, SimpleHookOutput } from './hook-output.js';
 
 const TIMEOUT_MS = 3000;
 const SEARCH_LIMIT = 5;
 const SCORE_THRESHOLD = 0.3;
+
+type HookResult = UserPromptSubmitOutput | SimpleHookOutput;
+
+const EMPTY_RESULT: SimpleHookOutput = {};
 
 interface UserPromptSubmitInput {
   session_id?: string;
@@ -25,40 +30,40 @@ async function main(): Promise<void> {
   process.stdout.write(JSON.stringify(result) + '\n');
 }
 
-async function timeout(ms: number): Promise<Record<string, unknown>> {
+async function timeout(ms: number): Promise<HookResult> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve({ hookSpecificOutput: {} });
+      resolve(EMPTY_RESULT);
     }, ms);
   });
 }
 
-async function doWork(): Promise<Record<string, unknown>> {
+async function doWork(): Promise<HookResult> {
   let input: UserPromptSubmitInput;
   try {
     const raw = await readStdin();
     input = JSON.parse(raw) as UserPromptSubmitInput;
   } catch {
-    return { hookSpecificOutput: {} };
+    return EMPTY_RESULT;
   }
 
   if (input.hook_event_name !== 'UserPromptSubmit') {
-    return { hookSpecificOutput: {} };
+    return EMPTY_RESULT;
   }
 
   const userPrompt = input.user_prompt ?? '';
   if (!userPrompt.trim()) {
-    return { hookSpecificOutput: {} };
+    return EMPTY_RESULT;
   }
 
   try {
     const cwd = input.cwd;
     if (!cwd) {
-      return { hookSpecificOutput: {} };
+      return EMPTY_RESULT;
     }
     const projectPath = detectProjectRoot(cwd);
     if (!projectPath) {
-      return { hookSpecificOutput: {} };
+      return EMPTY_RESULT;
     }
 
     const [{ loadConfig }, { createEmbedding }, { globalConceptsCollectionName }] =
@@ -83,7 +88,7 @@ async function doWork(): Promise<Record<string, unknown>> {
 
     // Quick-exit if no global concepts collection
     if (!(await vectordb.hasCollection(conceptsCol))) {
-      return { hookSpecificOutput: {} };
+      return EMPTY_RESULT;
     }
 
     const embedding = createEmbedding(config);
@@ -98,7 +103,7 @@ async function doWork(): Promise<Record<string, unknown>> {
 
     const relevant = results.filter((r) => r.score >= SCORE_THRESHOLD);
     if (relevant.length === 0) {
-      return { hookSpecificOutput: {} };
+      return EMPTY_RESULT;
     }
 
     const lines = relevant.map((r) => `- ${r.content}`);
@@ -106,13 +111,13 @@ async function doWork(): Promise<Record<string, unknown>> {
 
     return {
       hookSpecificOutput: {
-        additionalContext,
         hookEventName: 'UserPromptSubmit',
+        additionalContext,
       },
     };
   } catch (err) {
     process.stderr.write(`user-prompt-inject failed: ${String(err)}\n`);
-    return { hookSpecificOutput: {} };
+    return EMPTY_RESULT;
   }
 }
 

@@ -71,7 +71,7 @@ if [ "$AGE_DAYS" -gt "$TTL_DAYS" ]; then
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "allow",
-      "additionalContext": ("STALE CACHE: Documentation for \"" + $lib + "\" was cached " + $days + " days ago (past TTL). Consider refreshing with index_document after fetching, or use search_documents(query=\"...\", library=\"" + $lib + "\") if staleness is acceptable.")
+      "permissionDecisionReason": ("STALE CACHE: Documentation for \"" + $lib + "\" was cached " + $days + " days ago (past TTL). Consider refreshing with index_document after fetching, or use search_documents(query=\"...\", library=\"" + $lib + "\") if staleness is acceptable.")
     }
   }'
 else
@@ -79,7 +79,7 @@ else
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "allow",
-      "additionalContext": ("CACHED: Documentation for \"" + $lib + "\" is cached and fresh. Use search_documents(query=\"...\", library=\"" + $lib + "\") instead (~20 tokens/result vs ~5K+ tokens for a full fetch).")
+      "permissionDecisionReason": ("CACHED: Documentation for \"" + $lib + "\" is cached and fresh. Use search_documents(query=\"...\", library=\"" + $lib + "\") instead (~20 tokens/result vs ~5K+ tokens for a full fetch).")
     }
   }'
 fi

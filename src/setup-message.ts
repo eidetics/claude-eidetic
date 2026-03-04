@@ -86,10 +86,22 @@ export function getWelcomeMessage(): string {
 if (process.argv[1] === __filename) {
   const command = process.argv[2];
   if (command === 'welcome') {
-    console.log(JSON.stringify({ additionalContext: getWelcomeMessage() }));
+    const output: import('./hooks/hook-output.js').SessionStartOutput = {
+      hookSpecificOutput: {
+        hookEventName: 'SessionStart',
+        additionalContext: getWelcomeMessage(),
+      },
+    };
+    console.log(JSON.stringify(output));
   } else {
     const context = (command as SetupContext | undefined) ?? 'missing';
     const detail = process.argv[3] ?? 'OPENAI_API_KEY is not set.';
-    console.log(JSON.stringify({ additionalContext: getSetupErrorMessage(detail, context) }));
+    const output: import('./hooks/hook-output.js').SessionStartOutput = {
+      hookSpecificOutput: {
+        hookEventName: 'SessionStart',
+        additionalContext: getSetupErrorMessage(detail, context),
+      },
+    };
+    console.log(JSON.stringify(output));
   }
 }

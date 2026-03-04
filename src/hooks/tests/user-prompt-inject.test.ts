@@ -44,26 +44,26 @@ function parseOutput(raw: string) {
 }
 
 describe('user-prompt-inject hook', () => {
-  it('outputs empty hookSpecificOutput for invalid JSON', () => {
+  it('outputs empty object for invalid JSON', () => {
     const output = parseOutput(runHook('not json'));
-    expect(output).toHaveProperty('hookSpecificOutput');
+    expect(output).toEqual({});
   });
 
-  it('outputs empty hookSpecificOutput for wrong event name', () => {
+  it('outputs empty object for wrong event name', () => {
     const output = parseOutput(
       runHook({ hook_event_name: 'PostToolUse', user_prompt: 'hello', cwd: repoDir }),
     );
-    expect(output.hookSpecificOutput).toEqual({});
+    expect(output).toEqual({});
   });
 
-  it('outputs empty hookSpecificOutput for empty prompt', () => {
+  it('outputs empty object for empty prompt', () => {
     const output = parseOutput(
       runHook({ hook_event_name: 'UserPromptSubmit', user_prompt: '', cwd: repoDir }),
     );
-    expect(output.hookSpecificOutput).toEqual({});
+    expect(output).toEqual({});
   });
 
-  it('outputs empty hookSpecificOutput when no global concepts collection', () => {
+  it('outputs empty object when no global concepts collection', () => {
     const output = parseOutput(
       runHook({
         hook_event_name: 'UserPromptSubmit',
@@ -71,6 +71,6 @@ describe('user-prompt-inject hook', () => {
         cwd: repoDir,
       }),
     );
-    expect(output).toHaveProperty('hookSpecificOutput');
+    expect(output).toEqual({});
   });
 });
