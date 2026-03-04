@@ -227,7 +227,9 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.log(`Claude Eidetic MCP server v${BUILD_VERSION} (built ${BUILD_TIMESTAMP}) started on stdio.`);
+  console.log(
+    `Claude Eidetic MCP server v${BUILD_VERSION} (built ${BUILD_TIMESTAMP}) started on stdio.`,
+  );
 }
 
 process.on('SIGINT', () => {
