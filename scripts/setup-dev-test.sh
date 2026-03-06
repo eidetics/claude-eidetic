@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_DIR="$REPO_ROOT/plugin/plugins/claude-eidetic"
+PLUGIN_DIR="$REPO_ROOT/plugin"
 TARGET="${1:-.}"
 TARGET="$(cd "$TARGET" && pwd)"
 
@@ -63,7 +63,7 @@ mkdir -p "$WRAPPERS_DIR"
 
 make_wrapper() {
   local name="$1"   # e.g. session-start
-  local target="$2" # e.g. hooks/session-start.sh  OR  dist/hooks/foo.js
+  local target="$2" # e.g. hooks/session-start.sh
   local out="$WRAPPERS_DIR/$name.sh"
 
   cat > "$out" <<WRAPPER
@@ -75,26 +75,14 @@ WRAPPER
   chmod +x "$out"
 }
 
-make_node_wrapper() {
-  local name="$1"
-  local target="$2" # relative to PLUGIN_DIR, e.g. dist/hooks/post-tool-extract.js
-  local out="$WRAPPERS_DIR/$name.sh"
-
-  cat > "$out" <<WRAPPER
-#!/usr/bin/env bash
-export CLAUDE_PLUGIN_ROOT="$PLUGIN_DIR"
-INPUT=\$(cat)
-echo "\$INPUT" | node "$PLUGIN_DIR/$target"
-WRAPPER
-  chmod +x "$out"
-}
 
 make_wrapper       "session-start"      "hooks/session-start.sh"
 make_wrapper       "precompact"         "hooks/precompact-hook.sh"
 make_wrapper       "session-end"        "hooks/session-end-hook.sh"
 make_wrapper       "stop"              "hooks/stop-hook.sh"
 make_wrapper       "post-tool-write"   "hooks/post-tool-hook.sh"
-make_node_wrapper  "post-tool-extract" "dist/hooks/post-tool-extract.js"
+make_wrapper       "post-tool-extract" "hooks/post-tool-extract.sh"
+make_wrapper       "user-prompt-inject" "hooks/user-prompt-inject.sh"
 make_wrapper       "search-guidance"   "scripts/search-guidance.sh"
 make_wrapper       "prefer-eidetic"    "scripts/prefer-eidetic.sh"
 make_wrapper       "prefer-search"     "scripts/prefer-search.sh"
@@ -123,7 +111,8 @@ cat > "$TARGET/.claude/settings.json" <<EOF
       { "hooks": [{ "type": "command", "command": "bash \"$W/stop.sh\"", "timeout": 15 }] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "bash \"$W/search-guidance.sh\"", "timeout": 3 }] }
+      { "hooks": [{ "type": "command", "command": "bash \"$W/search-guidance.sh\"", "timeout": 3 }] },
+      { "hooks": [{ "type": "command", "command": "bash \"$W/user-prompt-inject.sh\"", "timeout": 4 }] }
     ],
     "PostToolUse": [
       {
@@ -153,21 +142,6 @@ cat > "$TARGET/.claude/settings.json" <<EOF
 }
 EOF
 echo "✓ .claude/settings.json"
-
-# ── Plugin dist symlink ───────────────────────────────────────────────────────
-# Hook scripts inside the plugin use ${CLAUDE_PLUGIN_ROOT}/dist/... to find
-# compiled JS. In dev, dist/ lives at the repo root, not inside the plugin dir.
-
-DIST_LINK="$PLUGIN_DIR/dist"
-
-if [ -L "$DIST_LINK" ]; then
-  rm "$DIST_LINK"
-elif [ -d "$DIST_LINK" ]; then
-  rm -rf "$DIST_LINK"
-fi
-
-ln -s "$REPO_ROOT/dist" "$DIST_LINK"
-echo "✓ plugin/dist -> $REPO_ROOT/dist"
 
 # ── Skills ────────────────────────────────────────────────────────────────────
 

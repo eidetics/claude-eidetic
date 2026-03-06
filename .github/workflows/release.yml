@@ -44,7 +44,7 @@ jobs:
       - name: Sync plugin.json and marketplace.json versions
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          PLUGIN_JSON="plugin/.claude-plugin/plugin.json"
           MARKETPLACE_JSON=".claude-plugin/marketplace.json"
           node -e "
           const fs = require('fs');
@@ -65,7 +65,7 @@ jobs:
       - name: Commit version updates to main
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          PLUGIN_JSON="plugin/plugins/claude-eidetic/.claude-plugin/plugin.json"
+          PLUGIN_JSON="plugin/.claude-plugin/plugin.json"
           MARKETPLACE_JSON=".claude-plugin/marketplace.json"
           git add package.json package-lock.json "$PLUGIN_JSON" "$MARKETPLACE_JSON"
           git commit -m "chore(release): v$VERSION"
