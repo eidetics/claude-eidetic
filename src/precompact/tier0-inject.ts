@@ -8,12 +8,13 @@
 
 import { execSync } from 'node:child_process';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { readSessionIndex } from './tier0-writer.js';
 import { getNotesDir, getProjectId } from './utils.js';
 
 const MAX_FILES_SHOWN = 5;
 
-function main(): void {
+export function run(): void {
   try {
     // Get cwd from environment (set by Claude Code) or detect from git
     const cwd = process.env.CLAUDE_CWD || process.cwd();
@@ -106,4 +107,7 @@ function formatTier0Context(
 // Export for testing
 export { formatTier0Context, detectProjectRoot };
 
-main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  run();
+}

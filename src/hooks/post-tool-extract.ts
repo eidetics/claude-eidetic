@@ -30,7 +30,7 @@ interface PostToolUseInput {
   tool_response?: unknown;
 }
 
-async function main(): Promise<void> {
+export async function run(): Promise<void> {
   let input: PostToolUseInput;
   try {
     const raw = await readStdin();
@@ -258,4 +258,7 @@ function writeOutput(): void {
   process.stdout.write(JSON.stringify(output));
 }
 
-void main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void run();
+}

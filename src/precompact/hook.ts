@@ -41,7 +41,7 @@ const HookInputSchema = z.discriminatedUnion('hook_event_name', [
   }),
 ]);
 
-async function main(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     const input = await readStdin();
 
@@ -212,4 +212,7 @@ function outputError(message: string): void {
   process.stdout.write(JSON.stringify(output));
 }
 
-void main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void run();
+}

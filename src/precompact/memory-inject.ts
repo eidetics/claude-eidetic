@@ -8,9 +8,10 @@
 
 import { execSync } from 'node:child_process';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { MemoryItem } from '../memory/types.js';
 
-async function main(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     // Get cwd from environment (set by Claude Code) or detect from git
     const cwd = process.env.CLAUDE_CWD ?? process.cwd();
@@ -105,4 +106,7 @@ export function formatMemoryContext(memories: MemoryItem[]): string {
   return lines.join('\n');
 }
 
-void main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void run();
+}

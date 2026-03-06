@@ -3,7 +3,7 @@
 # Message content lives in src/setup-message.ts (single source of truth)
 
 if [ -z "$OPENAI_API_KEY" ] && [ "${EMBEDDING_PROVIDER:-openai}" = "openai" ]; then
-  node "${CLAUDE_PLUGIN_ROOT}/dist/setup-message.js" "missing" "OPENAI_API_KEY is not set."
+  npx claude-eidetic hook setup-message missing "OPENAI_API_KEY is not set."
   exit 0
 fi
 
@@ -38,11 +38,11 @@ _is_first_run=$(node -e "
 " 2>/dev/null && echo "yes" || echo "no")
 
 if [ "$_is_first_run" = "yes" ]; then
-  node "${CLAUDE_PLUGIN_ROOT}/dist/setup-message.js" "welcome" 2>/dev/null || true
+  npx claude-eidetic hook setup-message welcome 2>/dev/null || true
 else
   # Inject Tier-0 context from most recent session (non-blocking, best-effort)
-  node "${CLAUDE_PLUGIN_ROOT}/dist/precompact/tier0-inject.js" 2>/dev/null || true
+  npx claude-eidetic hook tier0-inject 2>/dev/null || true
 
   # Inject stored memories from vector DB (non-blocking, best-effort)
-  node "${CLAUDE_PLUGIN_ROOT}/dist/precompact/memory-inject.js" 2>/dev/null || true
+  npx claude-eidetic hook memory-inject 2>/dev/null || true
 fi

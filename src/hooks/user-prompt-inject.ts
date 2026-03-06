@@ -7,6 +7,7 @@
  */
 
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import type { UserPromptSubmitOutput, SimpleHookOutput } from './hook-output.js';
 
 const TIMEOUT_MS = 3000;
@@ -24,7 +25,7 @@ interface UserPromptSubmitInput {
   hook_event_name?: string;
 }
 
-async function main(): Promise<void> {
+export async function run(): Promise<void> {
   // Race with timeout
   const result = await Promise.race([doWork(), timeout(TIMEOUT_MS)]);
   process.stdout.write(JSON.stringify(result) + '\n');
@@ -142,4 +143,7 @@ function readStdin(): Promise<string> {
   });
 }
 
-void main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void run();
+}

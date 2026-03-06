@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/hooks/post-tool-extract.js\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-extract.sh\"",
             "timeout": 10
           }
         ]
@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/hooks/user-prompt-inject.js\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-inject.sh\"",
             "timeout": 4
           }
         ]

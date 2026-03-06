@@ -14,6 +14,7 @@ import { z } from 'zod';
 import path from 'node:path';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const PostToolUseInputSchema = z.object({
   session_id: z.string(),
@@ -50,7 +51,7 @@ function outputError(message: string): void {
   process.stdout.write(JSON.stringify(output));
 }
 
-async function main(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     const input = await readStdin();
     const parseResult = PostToolUseInputSchema.safeParse(JSON.parse(input));
@@ -133,4 +134,7 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+// CLI router calls run() directly; self-execute when run as standalone script
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void run();
+}

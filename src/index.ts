@@ -77,6 +77,13 @@ const WORKFLOW_GUIDANCE = `# Eidetic Code Search Workflow
 - Memories are automatically deduplicated — adding similar facts updates existing ones`;
 
 async function main() {
+  // CLI subcommand routing — hooks call `npx claude-eidetic hook <event>`
+  if (process.argv[2] === 'hook') {
+    const { runHook } = await import('./hooks/cli-router.js');
+    await runHook(process.argv[3]);
+    process.exit(0);
+  }
+
   const config = loadConfig();
   console.log(
     `Config loaded. Provider: ${config.vectordbProvider}, Model: ${config.embeddingModel}`,
