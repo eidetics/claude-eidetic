@@ -70,3 +70,14 @@ jobs:
           git add package.json package-lock.json "$PLUGIN_JSON" "$MARKETPLACE_JSON"
           git commit -m "chore(release): v$VERSION"
           git push origin main
+
+      - name: Create git tag and GitHub release
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
